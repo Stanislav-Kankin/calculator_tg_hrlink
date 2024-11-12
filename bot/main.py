@@ -7,13 +7,18 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, UserData
+from models import Base, UserData, PaperCosts
+import matplotlib.pyplot as plt
+from database import init_db
 
 from config import BOT_TOKEN
 
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
+
+# Инициализация базы данных
+init_db()
 
 # Создаем подключение к базе данных
 engine = create_engine('sqlite:///user_data.db')
@@ -26,6 +31,7 @@ class Form(StatesGroup):
     employee_count = State()
     hr_specialist_count = State()
     documents_per_employee = State()
+    pages_per_document = State()  # Новое состояние
     turnover_percentage = State()
     working_minutes_per_month = State()
     average_salary = State()
@@ -35,10 +41,6 @@ class Form(StatesGroup):
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
-    """
-    Обработчик команды /start.
-    Приветствует пользователя и предлагает начать ввод данных или прекратить.
-    """
     user_text = (
         'Приветствую!\n'
         'Это бот для расчёта выгоды от перехода на КЭДО\n'
@@ -50,20 +52,12 @@ async def cmd_start(message: Message):
 
 @dp.message(lambda message: message.text.lower() == 'начать')
 async def start_form(message: Message, state: FSMContext):
-    """
-    Обработчик команды "начать".
-    Начинает процесс ввода данных пользователем.
-    """
     await message.answer("Название организации:")
     await state.set_state(Form.organization_name)
 
 
 @dp.message(lambda message: message.text.lower() == 'заново')
 async def restart_form(message: Message, state: FSMContext):
-    """
-    Обработчик команды "заново".
-    Перезапускает процесс ввода данных пользователем.
-    """
     await state.clear()
     await message.answer("Название организации:")
     await state.set_state(Form.organization_name)
@@ -71,19 +65,12 @@ async def restart_form(message: Message, state: FSMContext):
 
 @dp.message(lambda message: message.text.lower() == 'стоп')
 async def stop_form(message: Message, state: FSMContext):
-    """
-    Обработчик команды "стоп".
-    Прекращает процесс ввода данных пользователем.
-    """
     await state.clear()
     await message.answer("Вы прекратили ввод данных.")
 
 
 @dp.message(Form.organization_name)
 async def process_organization_name(message: Message, state: FSMContext):
-    """
-    Обработчик ввода названия организации.
-    """
     await state.update_data(organization_name=message.text)
     await message.answer("Введите число сотрудников:")
     await state.set_state(Form.employee_count)
@@ -91,9 +78,6 @@ async def process_organization_name(message: Message, state: FSMContext):
 
 @dp.message(Form.employee_count)
 async def process_employee_count(message: Message, state: FSMContext):
-    """
-    Обработчик ввода числа сотрудников.
-    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
@@ -104,9 +88,6 @@ async def process_employee_count(message: Message, state: FSMContext):
 
 @dp.message(Form.hr_specialist_count)
 async def process_hr_specialist_count(message: Message, state: FSMContext):
-    """
-    Обработчик ввода числа кадровых специалистов.
-    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
@@ -117,22 +98,28 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
 
 @dp.message(Form.documents_per_employee)
 async def process_documents_per_employee(message: Message, state: FSMContext):
-    """
-    Обработчик ввода среднего числа документов в год на сотрудника.
-    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
     await state.update_data(documents_per_employee=int(message.text))
+    await message.answer("Сколько в среднем страниц в документе? (обычно это 1.5 на сотрудника)")
+    await state.set_state(Form.pages_per_document)
+
+
+@dp.message(Form.pages_per_document)
+async def process_pages_per_document(message: Message, state: FSMContext):
+    try:
+        value = float(message.text)
+    except ValueError:
+        await message.answer("Пожалуйста, введите число.")
+        return
+    await state.update_data(pages_per_document=value)
     await message.answer("Какая в Вашей организации текучка в процентах?")
     await state.set_state(Form.turnover_percentage)
 
 
 @dp.message(Form.turnover_percentage)
 async def process_turnover_percentage(message: Message, state: FSMContext):
-    """
-    Обработчик ввода текучки в процентах.
-    """
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
@@ -145,9 +132,6 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
 
 @dp.message(Form.working_minutes_per_month)
 async def process_working_minutes_per_month(message: Message, state: FSMContext):
-    """
-    Обработчик ввода числа рабочих минут в месяце.
-    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
@@ -158,9 +142,6 @@ async def process_working_minutes_per_month(message: Message, state: FSMContext)
 
 @dp.message(Form.average_salary)
 async def process_average_salary(message: Message, state: FSMContext):
-    """
-    Обработчик ввода средней зарплаты сотрудника.
-    """
     try:
         value = float(message.text)
     except ValueError:
@@ -173,9 +154,6 @@ async def process_average_salary(message: Message, state: FSMContext):
 
 @dp.message(Form.courier_delivery_cost)
 async def process_courier_delivery_cost(message: Message, state: FSMContext):
-    """
-    Обработчик ввода стоимости курьерской доставки.
-    """
     try:
         value = float(message.text)
     except ValueError:
@@ -191,9 +169,6 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
 
 @dp.message(Form.hr_delivery_percentage)
 async def process_hr_delivery_percentage(message: Message, state: FSMContext):
-    """
-    Обработчик ввода процента от общего числа доставок, занимаемого отправкой кадровых документов.
-    """
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
@@ -204,9 +179,6 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
 
 
 async def save_data(message: Message, state: FSMContext):
-    """
-    Сохраняет данные пользователя в базу данных.
-    """
     data = await state.get_data()
     session = Session()
     user_data = UserData(
@@ -215,6 +187,7 @@ async def save_data(message: Message, state: FSMContext):
         employee_count=data['employee_count'],
         hr_specialist_count=data['hr_specialist_count'],
         documents_per_employee=data['documents_per_employee'],
+        pages_per_document=data['pages_per_document'],
         turnover_percentage=data['turnover_percentage'],
         working_minutes_per_month=data['working_minutes_per_month'],
         average_salary=data['average_salary'],
@@ -224,15 +197,58 @@ async def save_data(message: Message, state: FSMContext):
     session.add(user_data)
     session.commit()
     session.close()
-    await message.answer("Спасибо за предоставленные данные!")
+
+    # Расчеты
+    documents_per_year = calculate_documents_per_year(data)
+    pages_per_year = calculate_pages_per_year(data)
+    total_paper_costs = calculate_total_paper_costs(pages_per_year)
+
+    # Вывод результатов
+    results = (
+        f"Документов в год: {documents_per_year}\n"
+        f"Страниц в год: {pages_per_year}\n"
+        f"Итого расходы на бумагу: {total_paper_costs} руб.\n"
+    )
+    await message.answer(results)
+
+    # Графики
+    plot_results(documents_per_year, pages_per_year, total_paper_costs)
+
     await state.clear()
+
+
+def calculate_documents_per_year(data):
+    employee_count = data['employee_count']
+    documents_per_employee = data['documents_per_employee']
+    turnover_percentage = data['turnover_percentage']
+    return employee_count * documents_per_employee * (1 + turnover_percentage / 100)
+
+
+def calculate_pages_per_year(data):
+    documents_per_year = calculate_documents_per_year(data)
+    pages_per_document = data['pages_per_document']
+    return documents_per_year * pages_per_document
+
+
+def calculate_total_paper_costs(pages_per_year):
+    session = Session()
+    paper_costs = session.query(PaperCosts).first()
+    session.close()
+    return pages_per_year * (paper_costs.page_cost + paper_costs.printing_cost + paper_costs.storage_cost + paper_costs.rent_cost)
+
+
+def plot_results(documents_per_year, pages_per_year, total_paper_costs):
+    labels = ['Документов в год', 'Страниц в год', 'Итого расходы на бумагу']
+    values = [documents_per_year, pages_per_year, total_paper_costs]
+    plt.bar(labels, values)
+    plt.ylabel('Значения')
+    plt.title('Результаты расчетов')
+    plt.savefig('results.png')
+    plt.close()
 
 
 @dp.message()
 async def echo(message: Message):
-    """
-    Обработчик неизвестных команд.
-    """
     user_text = (
         'Не могу обработать это\n'
         'Если Вы вводили команду, то повторите ввод\n'
@@ -242,9 +258,6 @@ async def echo(message: Message):
 
 
 async def main():
-    """
-    Основная функция для запуска бота.
-    """
     await dp.start_polling(bot)
 
 

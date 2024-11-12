@@ -1,13 +1,27 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .models import Base
-
-from bot.config import DATABASE_URL
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+from models import Base, PaperCosts
 
 
-def get_session():
-    return Session()
+def init_db():
+    """
+    Инициализирует базу данных и создает все таблицы.
+    """
+    engine = create_engine('sqlite:///user_data.db')
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    # Проверяем, существуют ли данные в таблице PaperCosts
+    if not session.query(PaperCosts).first():
+        # Добавляем начальные данные в таблицу PaperCosts
+        paper_costs = PaperCosts()
+        session.add(paper_costs)
+        session.commit()
+
+    session.close()
+
+
+if __name__ == '__main__':
+    init_db()
+

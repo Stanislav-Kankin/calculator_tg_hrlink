@@ -9,14 +9,25 @@ class UserData(Base):
     __tablename__ = 'user_data'
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, unique=True)
+    user_id = Column(Integer, unique=False)
     organization_name = Column(String)
     employee_count = Column(Integer)
     hr_specialist_count = Column(Integer)
     documents_per_employee = Column(Integer)
+    pages_per_document = Column(Float)  # Новое поле
     turnover_percentage = Column(Float)
     working_minutes_per_month = Column(Integer)
     average_salary = Column(Float)
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
     timestamp = Column(DateTime, default=datetime.now())
+
+
+class PaperCosts(Base):
+    __tablename__ = 'paper_costs'
+
+    id = Column(Integer, primary_key=True)
+    page_cost = Column(Float, default=2.0)
+    printing_cost = Column(Float, default=1.43)
+    storage_cost = Column(Float, default=2.45)
+    rent_cost = Column(Float, default=0.64)
