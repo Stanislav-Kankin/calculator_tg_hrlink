@@ -35,22 +35,55 @@ class Form(StatesGroup):
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
+    """
+    Обработчик команды /start.
+    Приветствует пользователя и предлагает начать ввод данных или прекратить.
+    """
     user_text = (
         'Приветствую!\n'
         'Это бот для расчёта выгоды от перехода на КЭДО\n'
-        'Как будете готовы, напишите слово "начать".'
+        'Как будете готовы, напишите слово "начать".\n'
+        'Введите "заново" чтобы начать сначала или "стоп" чтобы прекратить.'
     )
     await message.answer(text=user_text)
 
 
 @dp.message(lambda message: message.text.lower() == 'начать')
 async def start_form(message: Message, state: FSMContext):
+    """
+    Обработчик команды "начать".
+    Начинает процесс ввода данных пользователем.
+    """
     await message.answer("Название организации:")
     await state.set_state(Form.organization_name)
 
 
+@dp.message(lambda message: message.text.lower() == 'заново')
+async def restart_form(message: Message, state: FSMContext):
+    """
+    Обработчик команды "заново".
+    Перезапускает процесс ввода данных пользователем.
+    """
+    await state.clear()
+    await message.answer("Название организации:")
+    await state.set_state(Form.organization_name)
+
+
+@dp.message(lambda message: message.text.lower() == 'стоп')
+async def stop_form(message: Message, state: FSMContext):
+    """
+    Обработчик команды "стоп".
+    Прекращает процесс ввода данных пользователем.
+    """
+    await state.clear()
+    await message.answer("Вы прекратили ввод данных.")
+
+
 @dp.message(Form.organization_name)
 async def process_organization_name(message: Message, state: FSMContext):
+    """
+    Обработчик ввода названия организации.
+    """
     await state.update_data(organization_name=message.text)
     await message.answer("Введите число сотрудников:")
     await state.set_state(Form.employee_count)
@@ -58,6 +91,9 @@ async def process_organization_name(message: Message, state: FSMContext):
 
 @dp.message(Form.employee_count)
 async def process_employee_count(message: Message, state: FSMContext):
+    """
+    Обработчик ввода числа сотрудников.
+    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
@@ -68,6 +104,9 @@ async def process_employee_count(message: Message, state: FSMContext):
 
 @dp.message(Form.hr_specialist_count)
 async def process_hr_specialist_count(message: Message, state: FSMContext):
+    """
+    Обработчик ввода числа кадровых специалистов.
+    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
@@ -78,6 +117,9 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
 
 @dp.message(Form.documents_per_employee)
 async def process_documents_per_employee(message: Message, state: FSMContext):
+    """
+    Обработчик ввода среднего числа документов в год на сотрудника.
+    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
@@ -88,6 +130,9 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
 
 @dp.message(Form.turnover_percentage)
 async def process_turnover_percentage(message: Message, state: FSMContext):
+    """
+    Обработчик ввода текучки в процентах.
+    """
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
@@ -100,6 +145,9 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
 
 @dp.message(Form.working_minutes_per_month)
 async def process_working_minutes_per_month(message: Message, state: FSMContext):
+    """
+    Обработчик ввода числа рабочих минут в месяце.
+    """
     if not message.text.isdigit():
         await message.answer("Пожалуйста, введите целое число.")
         return
@@ -110,6 +158,9 @@ async def process_working_minutes_per_month(message: Message, state: FSMContext)
 
 @dp.message(Form.average_salary)
 async def process_average_salary(message: Message, state: FSMContext):
+    """
+    Обработчик ввода средней зарплаты сотрудника.
+    """
     try:
         value = float(message.text)
     except ValueError:
@@ -122,6 +173,9 @@ async def process_average_salary(message: Message, state: FSMContext):
 
 @dp.message(Form.courier_delivery_cost)
 async def process_courier_delivery_cost(message: Message, state: FSMContext):
+    """
+    Обработчик ввода стоимости курьерской доставки.
+    """
     try:
         value = float(message.text)
     except ValueError:
@@ -137,6 +191,9 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
 
 @dp.message(Form.hr_delivery_percentage)
 async def process_hr_delivery_percentage(message: Message, state: FSMContext):
+    """
+    Обработчик ввода процента от общего числа доставок, занимаемого отправкой кадровых документов.
+    """
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
@@ -147,6 +204,9 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
 
 
 async def save_data(message: Message, state: FSMContext):
+    """
+    Сохраняет данные пользователя в базу данных.
+    """
     data = await state.get_data()
     session = Session()
     user_data = UserData(
@@ -170,10 +230,21 @@ async def save_data(message: Message, state: FSMContext):
 
 @dp.message()
 async def echo(message: Message):
-    await message.answer('Это неизвестная команда.')
+    """
+    Обработчик неизвестных команд.
+    """
+    user_text = (
+        'Не могу обработать это\n'
+        'Если Вы вводили команду, то повторите ввод\n'
+        'Если Вы вводили число, потоврите, число должно быть без пробелов!'
+    )
+    await message.answer(user_text)
 
 
 async def main():
+    """
+    Основная функция для запуска бота.
+    """
     await dp.start_polling(bot)
 
 

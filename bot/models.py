@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, Float, String
+from sqlalchemy import Column, Integer, Float, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -18,3 +19,4 @@ class UserData(Base):
     average_salary = Column(Float)
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
+    timestamp = Column(DateTime, default=datetime.now())
