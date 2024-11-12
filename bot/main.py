@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message
+from aiogram.types import Message, InputFile
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -102,7 +102,7 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
         await message.answer("Пожалуйста, введите целое число.")
         return
     await state.update_data(documents_per_employee=int(message.text))
-    await message.answer("Сколько в среднем страниц в документе? (обычно это 1.5 на сотрудника)")
+    await message.answer("Сколько в среднем страниц в документе? (обычно это 1,5 на сотрудника)")
     await state.set_state(Form.pages_per_document)
 
 
@@ -205,14 +205,15 @@ async def save_data(message: Message, state: FSMContext):
 
     # Вывод результатов
     results = (
-        f"Документов в год: {documents_per_year}\n"
-        f"Страниц в год: {pages_per_year}\n"
-        f"Итого расходы на бумагу: {total_paper_costs} руб.\n"
+        f"Документов в год: {format_number(documents_per_year)}\n"
+        f"Страниц в год: {format_number(pages_per_year)}\n"
+        f"Итого расходы на бумагу: {format_number(total_paper_costs)} руб.\n"
     )
     await message.answer(results)
 
     # Графики
     plot_results(documents_per_year, pages_per_year, total_paper_costs)
+    await message.answer_photo(InputFile('results.png'))
 
     await state.clear()
 
@@ -227,7 +228,7 @@ def calculate_documents_per_year(data):
 def calculate_pages_per_year(data):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_document = data['pages_per_document']
-    return documents_per_year * pages_per_document
+    return documents_per_year * pages_per_document * 2  # Умножаем на 2
 
 
 def calculate_total_paper_costs(pages_per_year):
@@ -245,6 +246,10 @@ def plot_results(documents_per_year, pages_per_year, total_paper_costs):
     plt.title('Результаты расчетов')
     plt.savefig('results.png')
     plt.close()
+
+
+def format_number(value):
+    return "{:,.2f}".format(value)
 
 
 @dp.message()
