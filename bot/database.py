@@ -2,7 +2,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, PaperCosts
 
-
 def init_db():
     """
     Инициализирует базу данных и создает все таблицы.
@@ -20,7 +19,6 @@ def init_db():
         session.commit()
 
     session.close()
-
 
 if __name__ == '__main__':
     init_db()

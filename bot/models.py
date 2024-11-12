@@ -4,7 +4,6 @@ from datetime import datetime
 
 Base = declarative_base()
 
-
 class UserData(Base):
     __tablename__ = 'user_data'
 
@@ -21,7 +20,6 @@ class UserData(Base):
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
     timestamp = Column(DateTime, default=datetime.now())
-
 
 class PaperCosts(Base):
     __tablename__ = 'paper_costs'

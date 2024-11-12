@@ -25,7 +25,6 @@ engine = create_engine('sqlite:///user_data.db')
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
-
 class Form(StatesGroup):
     organization_name = State()
     employee_count = State()
@@ -38,7 +37,6 @@ class Form(StatesGroup):
     courier_delivery_cost = State()
     hr_delivery_percentage = State()
 
-
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
     user_text = (
@@ -49,12 +47,10 @@ async def cmd_start(message: Message):
     )
     await message.answer(text=user_text)
 
-
 @dp.message(lambda message: message.text.lower() == 'начать')
 async def start_form(message: Message, state: FSMContext):
     await message.answer("Название организации:")
     await state.set_state(Form.organization_name)
-
 
 @dp.message(lambda message: message.text.lower() == 'заново')
 async def restart_form(message: Message, state: FSMContext):
@@ -62,19 +58,16 @@ async def restart_form(message: Message, state: FSMContext):
     await message.answer("Название организации:")
     await state.set_state(Form.organization_name)
 
-
 @dp.message(lambda message: message.text.lower() == 'стоп')
 async def stop_form(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Вы прекратили ввод данных.")
-
 
 @dp.message(Form.organization_name)
 async def process_organization_name(message: Message, state: FSMContext):
     await state.update_data(organization_name=message.text)
     await message.answer("Введите число сотрудников:")
     await state.set_state(Form.employee_count)
-
 
 @dp.message(Form.employee_count)
 async def process_employee_count(message: Message, state: FSMContext):
@@ -85,7 +78,6 @@ async def process_employee_count(message: Message, state: FSMContext):
     await message.answer("Введите число кадровых специалистов:")
     await state.set_state(Form.hr_specialist_count)
 
-
 @dp.message(Form.hr_specialist_count)
 async def process_hr_specialist_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
@@ -95,7 +87,6 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
     await message.answer("Сколько в среднем документов в год на сотрудника? (обычно около 30, укажите конкретно по Вашей организации)")
     await state.set_state(Form.documents_per_employee)
 
-
 @dp.message(Form.documents_per_employee)
 async def process_documents_per_employee(message: Message, state: FSMContext):
     if not message.text.isdigit():
@@ -104,7 +95,6 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
     await state.update_data(documents_per_employee=int(message.text))
     await message.answer("Сколько в среднем страниц в документе? (обычно это 1,5 на сотрудника)")
     await state.set_state(Form.pages_per_document)
-
 
 @dp.message(Form.pages_per_document)
 async def process_pages_per_document(message: Message, state: FSMContext):
@@ -117,7 +107,6 @@ async def process_pages_per_document(message: Message, state: FSMContext):
     await message.answer("Какая в Вашей организации текучка в процентах?")
     await state.set_state(Form.turnover_percentage)
 
-
 @dp.message(Form.turnover_percentage)
 async def process_turnover_percentage(message: Message, state: FSMContext):
     try:
@@ -129,7 +118,6 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
     await message.answer("Сколько рабочих минут в месяце? (обычно это 10080 минут)")
     await state.set_state(Form.working_minutes_per_month)
 
-
 @dp.message(Form.working_minutes_per_month)
 async def process_working_minutes_per_month(message: Message, state: FSMContext):
     if not message.text.isdigit():
@@ -138,7 +126,6 @@ async def process_working_minutes_per_month(message: Message, state: FSMContext)
     await state.update_data(working_minutes_per_month=int(message.text))
     await message.answer("Средняя зарплата сотрудника с учетом НДФЛ и налогов, руб.?")
     await state.set_state(Form.average_salary)
-
 
 @dp.message(Form.average_salary)
 async def process_average_salary(message: Message, state: FSMContext):
@@ -150,7 +137,6 @@ async def process_average_salary(message: Message, state: FSMContext):
     await state.update_data(average_salary=value)
     await message.answer("Сколько стоит 1 курьерская доставка? Укажите 0 если нет курьерских доставок.")
     await state.set_state(Form.courier_delivery_cost)
-
 
 @dp.message(Form.courier_delivery_cost)
 async def process_courier_delivery_cost(message: Message, state: FSMContext):
@@ -166,7 +152,6 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
     else:
         await save_data(message, state)
 
-
 @dp.message(Form.hr_delivery_percentage)
 async def process_hr_delivery_percentage(message: Message, state: FSMContext):
     try:
@@ -176,7 +161,6 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
         return
     await state.update_data(hr_delivery_percentage=value)
     await save_data(message, state)
-
 
 async def save_data(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -211,12 +195,7 @@ async def save_data(message: Message, state: FSMContext):
     )
     await message.answer(results)
 
-    # Графики
-    plot_results(documents_per_year, pages_per_year, total_paper_costs)
-    await message.answer_photo(InputFile('results.png'))
-
     await state.clear()
-
 
 def calculate_documents_per_year(data):
     employee_count = data['employee_count']
@@ -224,12 +203,10 @@ def calculate_documents_per_year(data):
     turnover_percentage = data['turnover_percentage']
     return employee_count * documents_per_employee * (1 + turnover_percentage / 100)
 
-
 def calculate_pages_per_year(data):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_document = data['pages_per_document']
     return documents_per_year * pages_per_document * 2  # Умножаем на 2
-
 
 def calculate_total_paper_costs(pages_per_year):
     session = Session()
@@ -237,20 +214,8 @@ def calculate_total_paper_costs(pages_per_year):
     session.close()
     return pages_per_year * (paper_costs.page_cost + paper_costs.printing_cost + paper_costs.storage_cost + paper_costs.rent_cost)
 
-
-def plot_results(documents_per_year, pages_per_year, total_paper_costs):
-    labels = ['Документов в год', 'Страниц в год', 'Итого расходы на бумагу']
-    values = [documents_per_year, pages_per_year, total_paper_costs]
-    plt.bar(labels, values)
-    plt.ylabel('Значения')
-    plt.title('Результаты расчетов')
-    plt.savefig('results.png')
-    plt.close()
-
-
 def format_number(value):
     return "{:,.2f}".format(value)
-
 
 @dp.message()
 async def echo(message: Message):
@@ -261,10 +226,8 @@ async def echo(message: Message):
     )
     await message.answer(user_text)
 
-
 async def main():
     await dp.start_polling(bot)
-
 
 if __name__ == '__main__':
     try:
