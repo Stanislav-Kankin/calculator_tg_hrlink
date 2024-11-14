@@ -224,12 +224,17 @@ async def save_data(message: Message, state: FSMContext):
     results = (
         f"Документов в год: {format_number(documents_per_year)}\n"
         f"Страниц в год: {format_number(pages_per_year)}\n"
+        "\n"
         f"Итого расходы на бумагу: {format_number(total_paper_costs)} руб.\n"
         f"Итого расходы на логистику: {format_number(total_logistics_costs)} руб.\n"
+        "\n"
         f"Стоимость минуты работника: {format_number(cost_per_minute)} руб.\n"
         f"Сумма трат на операции: {format_number(total_operations_costs)} руб.\n"
+        "\n"
         f"Сумма текущих трат на КДП на бумаге: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)} руб.\n"
+        "\n"
         f"Сумма по использованию нашего решения: {format_number(total_license_costs)} руб.\n"
+        "\n"
         f"Сумма выгоды: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)} руб."
     )
     await message.answer(results)
