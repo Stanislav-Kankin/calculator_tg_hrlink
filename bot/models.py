@@ -16,7 +16,7 @@ class UserData(Base):
     documents_per_employee = Column(Integer)
     pages_per_document = Column(Float)  # Новое поле
     turnover_percentage = Column(Float)
-    working_minutes_per_month = Column(Integer)
+    working_minutes_per_month = Column(Integer, default=10080)
     average_salary = Column(Float)
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)

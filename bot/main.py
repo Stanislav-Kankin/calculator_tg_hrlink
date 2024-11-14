@@ -102,7 +102,11 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
         await message.answer("Пожалуйста, введите целое число.")
         return
     await state.update_data(documents_per_employee=int(message.text))
-    await message.answer("Сколько в среднем страниц в документе? (обычно это 1,5 на сотрудника)")
+    await message.answer(
+        "Сколько в среднем страниц в документе?\n"
+        "Обычно это 1.5 документы, введите Ваше значение\n"
+        "Для разделения чисел используйте точку."
+        )
     await state.set_state(Form.pages_per_document)
 
 
@@ -115,19 +119,25 @@ async def process_pages_per_document(message: Message, state: FSMContext):
         return
     await state.update_data(pages_per_document=value)
     await message.answer("Какая в Вашей организации текучка в процентах?")
-    await state.set_state(Form.turnover_percentage)
-
-
-@dp.message(Form.turnover_percentage)
-async def process_turnover_percentage(message: Message, state: FSMContext):
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
         await message.answer("Пожалуйста, введите число.")
         return
     await state.update_data(turnover_percentage=value)
-    await message.answer("Сколько рабочих минут в месяце? (обычно это 10080 минут)")
     await state.set_state(Form.working_minutes_per_month)
+
+
+# @dp.message(Form.turnover_percentage)
+# async def process_turnover_percentage(message: Message, state: FSMContext):
+#     try:
+#         value = float(message.text.replace('%', '').strip())
+#     except ValueError:
+#         await message.answer("Пожалуйста, введите число.")
+#         return
+#     await state.update_data(turnover_percentage=value)
+#     await message.answer("Сколько рабочих минут в месяце? (обычно это 10080 минут)")
+#     await state.set_state(Form.working_minutes_per_month)
 
 
 @dp.message(Form.working_minutes_per_month)
@@ -189,7 +199,6 @@ async def save_data(message: Message, state: FSMContext):
         documents_per_employee=data['documents_per_employee'],
         pages_per_document=data['pages_per_document'],
         turnover_percentage=data['turnover_percentage'],
-        working_minutes_per_month=data['working_minutes_per_month'],
         average_salary=data['average_salary'],
         courier_delivery_cost=data['courier_delivery_cost'],
         hr_delivery_percentage=data.get('hr_delivery_percentage', 0)
@@ -235,7 +244,7 @@ def calculate_documents_per_year(data):
 def calculate_pages_per_year(data):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_document = data['pages_per_document']
-    return documents_per_year * pages_per_document * 2  # Умножаем на 2
+    return documents_per_year * pages_per_document
 
 
 def calculate_total_paper_costs(pages_per_year):
