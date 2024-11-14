@@ -5,6 +5,7 @@ from aiogram.types import (
     InlineKeyboardButton, CallbackQuery
     )
 from aiogram.filters import CommandStart
+from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -41,7 +42,9 @@ class Form(StatesGroup):
 
 def get_keyboard():
     keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
-        [InlineKeyboardButton(text="Заново", callback_data="restart")],
+        [InlineKeyboardButton(
+            text="Начать расчёт заново",
+            callback_data="restart")],
         [InlineKeyboardButton(text="Стоп", callback_data="stop")]
     ])
     return keyboard
@@ -49,7 +52,8 @@ def get_keyboard():
 
 def get_start_keyboard():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Начать", callback_data="start_form")]
+        [InlineKeyboardButton(
+            text="Приступисть к расчётам", callback_data="start_form")]
     ])
     return keyboard
 
@@ -58,70 +62,100 @@ def get_start_keyboard():
 async def cmd_start(message: Message):
     user_text = (
         'Приветствую!\n'
-        'Это бот для расчёта выгоды от перехода на КЭДО\n'
-        'Как будете готовы, нажмите кнопку "Начать".\n'
-        'Введите "заново" чтобы начать сначала или "стоп" чтобы прекратить.'
+        'Это бот для расчёта <b>выгоды от перехода на КЭДО</b>\n'
+        'Как будете готовы, нажмите кнопку <b>"Приступисть к расчётам"</b>.'
     )
-    await message.answer(text=user_text, reply_markup=get_start_keyboard())
+    await message.answer(
+        text=user_text, reply_markup=get_start_keyboard(),
+        parse_mode=ParseMode.HTML)
 
 
 @dp.callback_query(lambda c: c.data == "start_form")
 async def start_form(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.message.answer("Название организации:", reply_markup=get_keyboard())
+    await callback_query.message.answer(
+        "<b>Название организации?</b>",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.organization_name)
 
 
 @dp.message(lambda message: message.text.lower() == 'заново')
 async def restart_form(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Название организации:", reply_markup=get_keyboard())
+    await message.answer(
+        "<b>Название организации?</b>",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.organization_name)
 
 
 @dp.message(lambda message: message.text.lower() == 'стоп')
 async def stop_form(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Вы прекратили ввод данных.")
+    await message.answer(
+        "Вы прекратили ввод данных."
+        "Напишите /start для начала расчётов."
+        )
 
 
 @dp.message(Form.organization_name)
 async def process_organization_name(message: Message, state: FSMContext):
     await state.update_data(organization_name=message.text)
-    await message.answer("Введите число сотрудников:", reply_markup=get_keyboard())
+    await message.answer(
+        "Введите число сотрудников.",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.employee_count)
 
 
 @dp.message(Form.employee_count)
 async def process_employee_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.answer("Пожалуйста, введите целое число.", reply_markup=get_keyboard())
+        await message.answer(
+            "Пожалуйста, введите <b>целое число.</b>",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
     await state.update_data(employee_count=int(message.text))
-    await message.answer("Введите число кадровых специалистов:", reply_markup=get_keyboard())
+    await message.answer(
+        "Введите число <b>кадровых специалистов.</b>",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.hr_specialist_count)
 
 
 @dp.message(Form.hr_specialist_count)
 async def process_hr_specialist_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.answer("Пожалуйста, введите целое число.", reply_markup=get_keyboard())
+        await message.answer(
+            "Пожалуйста, введите <b>целое число.</b>",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
     await state.update_data(hr_specialist_count=int(message.text))
-    await message.answer("Сколько в среднем документов в год на сотрудника? (обычно около 30, укажите конкретно по Вашей организации)", reply_markup=get_keyboard())
+    await message.answer(
+        "Сколько в среднем документов в год на сотрудника?\n"
+        "Обычно около 30, укажите конкретно по Вашей организации.",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.documents_per_employee)
 
 
 @dp.message(Form.documents_per_employee)
 async def process_documents_per_employee(message: Message, state: FSMContext):
-    if not message.text.isdigit():
-        await message.answer("Пожалуйста, введите целое число.", reply_markup=get_keyboard())
+    # Проверяем, является ли введенный текст числом с плавающей точкой
+    try:
+        value = float(message.text)  # Пробуем преобразовать в float
+        if value <= 0:
+            raise ValueError("Число должно быть положительным.")
+    except ValueError:
+        await message.answer(
+            "Пожалуйста, введите положительное число.",
+            reply_markup=get_keyboard()
+        )
         return
-    await state.update_data(documents_per_employee=int(message.text))
+
+    await state.update_data(documents_per_employee=int(value))
     await message.answer(
         "Сколько в среднем страниц в документе?\n"
-        "Обычно это 1.5 документы, введите Ваше значение\n"
-        "Для разделения чисел используйте точку.", reply_markup=get_keyboard()
-        )
+        "Обычно это 2.1 страницы, введите Ваше значение\n"
+        "Для разделения дробной части используйте точку.",
+        reply_markup=get_keyboard()
+
+    )
     await state.set_state(Form.pages_per_document)
 
 
@@ -130,10 +164,18 @@ async def process_pages_per_document(message: Message, state: FSMContext):
     try:
         value = float(message.text)
     except ValueError:
-        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
+        await message.answer(
+            "Пожалуйста, <b>введите число.</b>",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
+        )
         return
+
     await state.update_data(pages_per_document=value)
-    await message.answer("Какая в Вашей организации текучка в процентах?", reply_markup=get_keyboard())
+    await message.answer(
+        "Какая в Вашей организации <b>текучка в процентах?</b>\n"
+        "Введите только целое число, знак <b>%</b> указывать не нужно.",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
+    )
     await state.set_state(Form.turnover_percentage)
 
 
@@ -142,10 +184,14 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
-        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
+        await message.answer(
+            "Пожалуйста, введите число.",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
     await state.update_data(turnover_percentage=value)
-    await message.answer("Средняя зарплата сотрудника с учетом НДФЛ и налогов, руб.?", reply_markup=get_keyboard())
+    await message.answer(
+        "Средняя зарплата сотрудника с учетом НДФЛ и налогов, руб.?",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.average_salary)
 
 
@@ -154,10 +200,15 @@ async def process_average_salary(message: Message, state: FSMContext):
     try:
         value = float(message.text)
     except ValueError:
-        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
+        await message.answer(
+            "Пожалуйста, введите число.",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
     await state.update_data(average_salary=value)
-    await message.answer("Сколько стоит 1 курьерская доставка? Укажите 0 если нет курьерских доставок.", reply_markup=get_keyboard())
+    await message.answer(
+        "Сколько стоит 1 курьерская доставка?\n"
+        "Укажите 0 если нет курьерских доставок.",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.courier_delivery_cost)
 
 
@@ -166,11 +217,16 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
     try:
         value = float(message.text)
     except ValueError:
-        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
+        await message.answer(
+            "Пожалуйста, введите число.",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
     await state.update_data(courier_delivery_cost=value)
     if value > 0:
-        await message.answer("Какой % от общего числа доставок занимает именно отправка кадровых документов?", reply_markup=get_keyboard())
+        await message.answer(
+            "Какой % от общего числа доставок занимает "
+            "именно отправка кадровых документов?",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_delivery_percentage)
     else:
         await save_data(message, state)
@@ -181,7 +237,9 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
-        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
+        await message.answer(
+            "Пожалуйста, введите число.",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
     await state.update_data(hr_delivery_percentage=value)
     await save_data(message, state)
@@ -210,9 +268,13 @@ async def save_data(message: Message, state: FSMContext):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_year = calculate_pages_per_year(data)
     total_paper_costs = calculate_total_paper_costs(pages_per_year)
-    total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
+    total_logistics_costs = calculate_total_logistics_costs(
+        data, documents_per_year
+        )
     cost_per_minute = calculate_cost_per_minute(data)
-    total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
+    total_operations_costs = calculate_total_operations_costs(
+        data, documents_per_year, cost_per_minute
+        )
 
     # Расчет суммы по использованию нашего решения
     session = Session()
@@ -222,22 +284,35 @@ async def save_data(message: Message, state: FSMContext):
 
     # Вывод результатов
     results = (
-        f"Документов в год: {format_number(documents_per_year)}\n"
-        f"Страниц в год: {format_number(pages_per_year)}\n"
+        "<b>ЭТО ВАРИАНТ ТЕСТОВОЙ ИНФОРМАЦИИ ДЛЯ РАЗРАБОТКИ</b>\n"
         "\n"
-        f"Итого расходы на бумагу: {format_number(total_paper_costs)} руб.\n"
-        f"Итого расходы на логистику: {format_number(total_logistics_costs)} руб.\n"
+        f"Документов в год: <b>{format_number(documents_per_year)}</b>\n"
+        f"Страниц в год: <b>{format_number(pages_per_year)}</b>\n"
         "\n"
-        f"Стоимость минуты работника: {format_number(cost_per_minute)} руб.\n"
-        f"Сумма трат на операции: {format_number(total_operations_costs)} руб.\n"
+        f"Итого расходы на бумагу: <b>{format_number(total_paper_costs)}</b> руб.\n"
         "\n"
-        f"Сумма текущих трат на КДП на бумаге: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)} руб.\n"
+        f"Итого расходы на логистику: <b>{format_number(total_logistics_costs)}</b> руб.\n"
         "\n"
-        f"Сумма по использованию нашего решения: {format_number(total_license_costs)} руб.\n"
+        f"Стоимость минуты работника: <b>{format_number(cost_per_minute)}</b> руб.\n"
         "\n"
-        f"Сумма выгоды: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)} руб."
+        f"Сумма трат на операции:<b> {format_number(total_operations_costs)}</b> руб.\n"
+        f"Сумма текущих трат на КДП на бумаге: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
+        f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. "
+        f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
     )
-    await message.answer(results)
+
+    user_text = (
+        "<b>ВАРИАНТ ВЫВОДА ДЛЯ ПОЛЬЗОВАТЕЛЯ (КЛИЕНТА)</b>\n"
+        "\n"
+        f"Сумма текущих трат на КДП на бумаге: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
+        "\n"
+        "\n"
+        f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. "
+        f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
+    )
+
+    await message.answer(results, parse_mode=ParseMode.HTML)
+    await message.answer(user_text, parse_mode=ParseMode.HTML)
 
     await state.clear()
 
@@ -299,7 +374,7 @@ def calculate_total_license_costs(data, license_costs):
 
 
 def format_number(value):
-    return "{:,.2f}".format(value)
+    return "{:,.0f}".format(value).replace(',', ' ')
 
 
 @dp.message()
@@ -309,7 +384,7 @@ async def echo(message: Message):
         'Если Вы вводили команду, то повторите ввод\n'
         'Если Вы вводили число, потоврите, число должно быть без пробелов!'
     )
-    await message.answer(user_text)
+    await message.answer(user_text, parse_mode=ParseMode.HTML)
 
 
 @dp.callback_query(lambda c: c.data in ["restart", "stop"])
