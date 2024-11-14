@@ -1,6 +1,9 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    Message, InlineKeyboardMarkup,
+    InlineKeyboardButton, CallbackQuery
+    )
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -37,11 +40,17 @@ class Form(StatesGroup):
 
 
 def get_keyboard():
-    keyboard = InlineKeyboardMarkup(row_width=2)
-    keyboard.add(
-        InlineKeyboardButton(text="Заново", callback_data="restart"),
-        InlineKeyboardButton(text="Стоп", callback_data="stop")
-    )
+    keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(text="Заново", callback_data="restart")],
+        [InlineKeyboardButton(text="Стоп", callback_data="stop")]
+    ])
+    return keyboard
+
+
+def get_start_keyboard():
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Начать", callback_data="start_form")]
+    ])
     return keyboard
 
 
@@ -50,15 +59,15 @@ async def cmd_start(message: Message):
     user_text = (
         'Приветствую!\n'
         'Это бот для расчёта выгоды от перехода на КЭДО\n'
-        'Как будете готовы, напишите слово "начать".\n'
+        'Как будете готовы, нажмите кнопку "Начать".\n'
         'Введите "заново" чтобы начать сначала или "стоп" чтобы прекратить.'
     )
-    await message.answer(text=user_text)
+    await message.answer(text=user_text, reply_markup=get_start_keyboard())
 
 
-@dp.message(lambda message: message.text.lower() == 'начать')
-async def start_form(message: Message, state: FSMContext):
-    await message.answer("Название организации:", reply_markup=get_keyboard())
+@dp.callback_query(lambda c: c.data == "start_form")
+async def start_form(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Название организации:", reply_markup=get_keyboard())
     await state.set_state(Form.organization_name)
 
 
@@ -73,6 +82,7 @@ async def restart_form(message: Message, state: FSMContext):
 async def stop_form(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Вы прекратили ввод данных.")
+
 
 @dp.message(Form.organization_name)
 async def process_organization_name(message: Message, state: FSMContext):
