@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message  # InputFile
+from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -8,9 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, UserData, PaperCosts, LicenseCosts
-# import matplotlib.pyplot as plt
 from database import init_db
-
 from config import BOT_TOKEN
 
 bot = Bot(token=BOT_TOKEN)
@@ -33,7 +31,6 @@ class Form(StatesGroup):
     documents_per_employee = State()
     pages_per_document = State()
     turnover_percentage = State()
-    working_minutes_per_month = State()
     average_salary = State()
     courier_delivery_cost = State()
     hr_delivery_percentage = State()
@@ -119,33 +116,17 @@ async def process_pages_per_document(message: Message, state: FSMContext):
         return
     await state.update_data(pages_per_document=value)
     await message.answer("Какая в Вашей организации текучка в процентах?")
+    await state.set_state(Form.turnover_percentage)
+
+
+@dp.message(Form.turnover_percentage)
+async def process_turnover_percentage(message: Message, state: FSMContext):
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
         await message.answer("Пожалуйста, введите число.")
         return
     await state.update_data(turnover_percentage=value)
-    await state.set_state(Form.working_minutes_per_month)
-
-
-# @dp.message(Form.turnover_percentage)
-# async def process_turnover_percentage(message: Message, state: FSMContext):
-#     try:
-#         value = float(message.text.replace('%', '').strip())
-#     except ValueError:
-#         await message.answer("Пожалуйста, введите число.")
-#         return
-#     await state.update_data(turnover_percentage=value)
-#     await message.answer("Сколько рабочих минут в месяце? (обычно это 10080 минут)")
-#     await state.set_state(Form.working_minutes_per_month)
-
-
-@dp.message(Form.working_minutes_per_month)
-async def process_working_minutes_per_month(message: Message, state: FSMContext):
-    if not message.text.isdigit():
-        await message.answer("Пожалуйста, введите целое число.")
-        return
-    await state.update_data(working_minutes_per_month=int(message.text))
     await message.answer("Средняя зарплата сотрудника с учетом НДФЛ и налогов, руб.?")
     await state.set_state(Form.average_salary)
 
@@ -211,23 +192,27 @@ async def save_data(message: Message, state: FSMContext):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_year = calculate_pages_per_year(data)
     total_paper_costs = calculate_total_paper_costs(pages_per_year)
+    total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
+    cost_per_minute = calculate_cost_per_minute(data)
+    total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
 
     # Расчет суммы по использованию нашего решения
     session = Session()
     license_costs = session.query(LicenseCosts).first()
     session.close()
-    total_license_costs = (
-        license_costs.main_license_cost +
-        (license_costs.hr_license_cost * data['hr_specialist_count']) +
-        (license_costs.employee_license_cost * data['employee_count'])
-    )
+    total_license_costs = calculate_total_license_costs(data, license_costs)
 
     # Вывод результатов
     results = (
         f"Документов в год: {format_number(documents_per_year)}\n"
         f"Страниц в год: {format_number(pages_per_year)}\n"
         f"Итого расходы на бумагу: {format_number(total_paper_costs)} руб.\n"
-        f"Сумма по использованию нашего решения: {format_number(total_license_costs)} руб."
+        f"Итого расходы на логистику: {format_number(total_logistics_costs)} руб.\n"
+        f"Стоимость минуты работника: {format_number(cost_per_minute)} руб.\n"
+        f"Сумма трат на операции: {format_number(total_operations_costs)} руб.\n"
+        f"Сумма текущих трат на КДП на бумаге: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)} руб.\n"
+        f"Сумма по использованию нашего решения: {format_number(total_license_costs)} руб.\n"
+        f"Сумма выгоды: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)} руб."
     )
     await message.answer(results)
 
@@ -252,6 +237,42 @@ def calculate_total_paper_costs(pages_per_year):
     paper_costs = session.query(PaperCosts).first()
     session.close()
     return pages_per_year * (paper_costs.page_cost + paper_costs.printing_cost + paper_costs.storage_cost + paper_costs.rent_cost)
+
+
+def calculate_total_logistics_costs(data, documents_per_year):
+    courier_delivery_cost = data['courier_delivery_cost']
+    hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
+    return courier_delivery_cost * hr_delivery_percentage / 100 * documents_per_year
+
+
+def calculate_cost_per_minute(data):
+    average_salary = data['average_salary']
+    working_minutes_per_month = data.get('working_minutes_per_month', 10080)
+    return average_salary / working_minutes_per_month
+
+
+def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
+    return cost_per_minute * documents_per_year
+
+
+def calculate_total_license_costs(data, license_costs):
+    employee_count = data['employee_count']
+    hr_specialist_count = data['hr_specialist_count']
+    if employee_count <= 500:
+        employee_license_cost = 1000
+    elif employee_count <= 1499:
+        employee_license_cost = 900
+    elif employee_count <= 5000:
+        employee_license_cost = 850
+    elif employee_count <= 10000:
+        employee_license_cost = 800
+    else:
+        employee_license_cost = 750
+    return (
+        license_costs.main_license_cost +
+        (license_costs.hr_license_cost * hr_specialist_count) +
+        (employee_license_cost * employee_count)
+    )
 
 
 def format_number(value):

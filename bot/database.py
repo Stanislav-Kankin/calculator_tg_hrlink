@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, PaperCosts, LicenseCosts
+from models import Base, PaperCosts, LicenseCosts, TypicalOperations
 
 
 def init_db():
@@ -24,6 +24,11 @@ def init_db():
         # Добавляем начальные данные в таблицу LicenseCosts
         license_costs = LicenseCosts()
         session.add(license_costs)
+        session.commit()
+
+    if not session.query(TypicalOperations).first():
+        typical_operations = TypicalOperations()
+        session.add(typical_operations)
         session.commit()
 
     session.close()

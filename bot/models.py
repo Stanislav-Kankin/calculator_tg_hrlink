@@ -14,7 +14,7 @@ class UserData(Base):
     employee_count = Column(Integer)
     hr_specialist_count = Column(Integer)
     documents_per_employee = Column(Integer)
-    pages_per_document = Column(Float)  # Новое поле
+    pages_per_document = Column(Float)
     turnover_percentage = Column(Float)
     working_minutes_per_month = Column(Integer, default=10080)
     average_salary = Column(Float)
@@ -39,4 +39,12 @@ class LicenseCosts(Base):
     id = Column(Integer, primary_key=True)
     main_license_cost = Column(Float, default=15000)
     hr_license_cost = Column(Float, default=15000)
-    employee_license_cost = Column(Float, default=600)
+    employee_license_cost = Column(Float, default=1000)
+
+
+class TypicalOperations(Base):
+    __tablename__ = 'typical_operations'
+    id = Column(Integer, primary_key=True)
+    time_of_printing = Column(Integer, default=3)
+    time_of_signing = Column(Integer, default=3)
+    tome_of_archiving = Column(Integer, default=3)
