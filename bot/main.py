@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -36,6 +36,15 @@ class Form(StatesGroup):
     hr_delivery_percentage = State()
 
 
+def get_keyboard():
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    keyboard.add(
+        InlineKeyboardButton(text="Заново", callback_data="restart"),
+        InlineKeyboardButton(text="Стоп", callback_data="stop")
+    )
+    return keyboard
+
+
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
     user_text = (
@@ -49,14 +58,14 @@ async def cmd_start(message: Message):
 
 @dp.message(lambda message: message.text.lower() == 'начать')
 async def start_form(message: Message, state: FSMContext):
-    await message.answer("Название организации:")
+    await message.answer("Название организации:", reply_markup=get_keyboard())
     await state.set_state(Form.organization_name)
 
 
 @dp.message(lambda message: message.text.lower() == 'заново')
 async def restart_form(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Название организации:")
+    await message.answer("Название организации:", reply_markup=get_keyboard())
     await state.set_state(Form.organization_name)
 
 
@@ -65,44 +74,43 @@ async def stop_form(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Вы прекратили ввод данных.")
 
-
 @dp.message(Form.organization_name)
 async def process_organization_name(message: Message, state: FSMContext):
     await state.update_data(organization_name=message.text)
-    await message.answer("Введите число сотрудников:")
+    await message.answer("Введите число сотрудников:", reply_markup=get_keyboard())
     await state.set_state(Form.employee_count)
 
 
 @dp.message(Form.employee_count)
 async def process_employee_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.answer("Пожалуйста, введите целое число.")
+        await message.answer("Пожалуйста, введите целое число.", reply_markup=get_keyboard())
         return
     await state.update_data(employee_count=int(message.text))
-    await message.answer("Введите число кадровых специалистов:")
+    await message.answer("Введите число кадровых специалистов:", reply_markup=get_keyboard())
     await state.set_state(Form.hr_specialist_count)
 
 
 @dp.message(Form.hr_specialist_count)
 async def process_hr_specialist_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.answer("Пожалуйста, введите целое число.")
+        await message.answer("Пожалуйста, введите целое число.", reply_markup=get_keyboard())
         return
     await state.update_data(hr_specialist_count=int(message.text))
-    await message.answer("Сколько в среднем документов в год на сотрудника? (обычно около 30, укажите конкретно по Вашей организации)")
+    await message.answer("Сколько в среднем документов в год на сотрудника? (обычно около 30, укажите конкретно по Вашей организации)", reply_markup=get_keyboard())
     await state.set_state(Form.documents_per_employee)
 
 
 @dp.message(Form.documents_per_employee)
 async def process_documents_per_employee(message: Message, state: FSMContext):
     if not message.text.isdigit():
-        await message.answer("Пожалуйста, введите целое число.")
+        await message.answer("Пожалуйста, введите целое число.", reply_markup=get_keyboard())
         return
     await state.update_data(documents_per_employee=int(message.text))
     await message.answer(
         "Сколько в среднем страниц в документе?\n"
         "Обычно это 1.5 документы, введите Ваше значение\n"
-        "Для разделения чисел используйте точку."
+        "Для разделения чисел используйте точку.", reply_markup=get_keyboard()
         )
     await state.set_state(Form.pages_per_document)
 
@@ -112,10 +120,10 @@ async def process_pages_per_document(message: Message, state: FSMContext):
     try:
         value = float(message.text)
     except ValueError:
-        await message.answer("Пожалуйста, введите число.")
+        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
         return
     await state.update_data(pages_per_document=value)
-    await message.answer("Какая в Вашей организации текучка в процентах?")
+    await message.answer("Какая в Вашей организации текучка в процентах?", reply_markup=get_keyboard())
     await state.set_state(Form.turnover_percentage)
 
 
@@ -124,10 +132,10 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
-        await message.answer("Пожалуйста, введите число.")
+        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
         return
     await state.update_data(turnover_percentage=value)
-    await message.answer("Средняя зарплата сотрудника с учетом НДФЛ и налогов, руб.?")
+    await message.answer("Средняя зарплата сотрудника с учетом НДФЛ и налогов, руб.?", reply_markup=get_keyboard())
     await state.set_state(Form.average_salary)
 
 
@@ -136,10 +144,10 @@ async def process_average_salary(message: Message, state: FSMContext):
     try:
         value = float(message.text)
     except ValueError:
-        await message.answer("Пожалуйста, введите число.")
+        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
         return
     await state.update_data(average_salary=value)
-    await message.answer("Сколько стоит 1 курьерская доставка? Укажите 0 если нет курьерских доставок.")
+    await message.answer("Сколько стоит 1 курьерская доставка? Укажите 0 если нет курьерских доставок.", reply_markup=get_keyboard())
     await state.set_state(Form.courier_delivery_cost)
 
 
@@ -148,11 +156,11 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
     try:
         value = float(message.text)
     except ValueError:
-        await message.answer("Пожалуйста, введите число.")
+        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
         return
     await state.update_data(courier_delivery_cost=value)
     if value > 0:
-        await message.answer("Какой % от общего числа доставок занимает именно отправка кадровых документов?")
+        await message.answer("Какой % от общего числа доставок занимает именно отправка кадровых документов?", reply_markup=get_keyboard())
         await state.set_state(Form.hr_delivery_percentage)
     else:
         await save_data(message, state)
@@ -163,7 +171,7 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
     try:
         value = float(message.text.replace('%', '').strip())
     except ValueError:
-        await message.answer("Пожалуйста, введите число.")
+        await message.answer("Пожалуйста, введите число.", reply_markup=get_keyboard())
         return
     await state.update_data(hr_delivery_percentage=value)
     await save_data(message, state)
@@ -287,6 +295,14 @@ async def echo(message: Message):
         'Если Вы вводили число, потоврите, число должно быть без пробелов!'
     )
     await message.answer(user_text)
+
+
+@dp.callback_query(lambda c: c.data in ["restart", "stop"])
+async def process_callback(callback_query: CallbackQuery, state: FSMContext):
+    if callback_query.data == "restart":
+        await restart_form(callback_query.message, state)
+    elif callback_query.data == "stop":
+        await stop_form(callback_query.message, state)
 
 
 async def main():
