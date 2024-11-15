@@ -1,9 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import (
-    Message, InlineKeyboardMarkup,
-    InlineKeyboardButton, CallbackQuery
-    )
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
@@ -13,7 +10,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, UserData, PaperCosts, LicenseCosts
 from database import init_db
-from config import BOT_TOKEN
+
+from decouple import Config, RepositoryEnv
+
+from keyboards import get_keyboard, get_start_keyboard
+
+
+config = Config(RepositoryEnv('.env'))
+BOT_TOKEN = config('BOT_TOKEN')
 
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
@@ -38,24 +42,6 @@ class Form(StatesGroup):
     average_salary = State()
     courier_delivery_cost = State()
     hr_delivery_percentage = State()
-
-
-def get_keyboard():
-    keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
-        [InlineKeyboardButton(
-            text="Начать расчёт заново",
-            callback_data="restart")],
-        [InlineKeyboardButton(text="Стоп", callback_data="stop")]
-    ])
-    return keyboard
-
-
-def get_start_keyboard():
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="Приступисть к расчётам", callback_data="start_form")]
-    ])
-    return keyboard
 
 
 @dp.message(CommandStart())
@@ -312,7 +298,9 @@ async def save_data(message: Message, state: FSMContext):
     )
 
     await message.answer(results, parse_mode=ParseMode.HTML)
-    await message.answer(user_text, parse_mode=ParseMode.HTML)
+    await message.answer(
+        user_text, reply_markup=get_start_keyboard(),
+        parse_mode=ParseMode.HTML)
 
     await state.clear()
 
@@ -384,7 +372,9 @@ async def echo(message: Message):
         'Если Вы вводили команду, то повторите ввод\n'
         'Если Вы вводили число, потоврите, число должно быть без пробелов!'
     )
-    await message.answer(user_text, parse_mode=ParseMode.HTML)
+    await message.answer(
+        user_text, reply_markup=get_start_keyboard(),
+        parse_mode=ParseMode.HTML)
 
 
 @dp.callback_query(lambda c: c.data in ["restart", "stop"])
