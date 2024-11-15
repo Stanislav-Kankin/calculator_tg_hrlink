@@ -15,10 +15,6 @@ from decouple import Config, RepositoryEnv
 from states import Form
 from keyboards import get_keyboard, get_start_keyboard, get_contact_keyboard
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
 
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
@@ -407,6 +403,7 @@ def format_number(value):
 async def send_contact_data(state: FSMContext):
     data = await state.get_data()
     contact_info = (
+        "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>"
         f"Имя: {data['contact_name']}\n"
         f"Телефон: {data['contact_phone']}\n"
         f"Email: {data['contact_email']}\n"
