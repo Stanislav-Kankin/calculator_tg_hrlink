@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+
 from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -12,12 +12,17 @@ from models import Base, UserData, PaperCosts, LicenseCosts
 from database import init_db
 
 from decouple import Config, RepositoryEnv
+from states import Form
+from keyboards import get_keyboard, get_start_keyboard, get_contact_keyboard
 
-from keyboards import get_keyboard, get_start_keyboard
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
+# MAIL_P = config('MAIL_P')
 
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
@@ -30,18 +35,6 @@ init_db()
 engine = create_engine('sqlite:///user_data.db')
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
-
-
-class Form(StatesGroup):
-    organization_name = State()
-    employee_count = State()
-    hr_specialist_count = State()
-    documents_per_employee = State()
-    pages_per_document = State()
-    turnover_percentage = State()
-    average_salary = State()
-    courier_delivery_cost = State()
-    hr_delivery_percentage = State()
 
 
 @dp.message(CommandStart())
@@ -299,9 +292,54 @@ async def save_data(message: Message, state: FSMContext):
 
     await message.answer(results, parse_mode=ParseMode.HTML)
     await message.answer(
-        user_text, reply_markup=get_start_keyboard(),
+        user_text, reply_markup=get_contact_keyboard(),
         parse_mode=ParseMode.HTML)
 
+    await state.clear()
+
+
+@dp.callback_query(lambda c: c.data == "contact_me")
+async def contact_me(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer(
+        "<b>Как к вам обращаться?</b>",
+        parse_mode=ParseMode.HTML)
+    await state.set_state(Form.contact_name)
+
+
+@dp.message(Form.contact_name)
+async def process_contact_name(message: Message, state: FSMContext):
+    await state.update_data(contact_name=message.text)
+    await message.answer(
+        "<b>Номер телефона для связи?</b>",
+        parse_mode=ParseMode.HTML)
+    await state.set_state(Form.contact_phone)
+
+
+@dp.message(Form.contact_phone)
+async def process_contact_phone(message: Message, state: FSMContext):
+    await state.update_data(contact_phone=message.text)
+    await message.answer(
+        "<b>Электронная почта?</b>",
+        parse_mode=ParseMode.HTML)
+    await state.set_state(Form.contact_email)
+
+
+@dp.message(Form.contact_email)
+async def process_contact_email(message: Message, state: FSMContext):
+    await state.update_data(contact_email=message.text)
+    await message.answer(
+        "<b>Какой канал связи предпочитаете? Почта, мессенджер, звонок.</b>",
+        parse_mode=ParseMode.HTML)
+    await state.set_state(Form.contact_preference)
+
+
+@dp.message(Form.contact_preference)
+async def process_contact_preference(message: Message, state: FSMContext):
+    await state.update_data(contact_preference=message.text)
+    await message.answer(
+        "<b>Спасибо, данные записали и передали менеджеру, с Вами скоро свяжутся.</b>",
+        reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
+    await send_contact_data(state)
     await state.clear()
 
 
@@ -363,6 +401,36 @@ def calculate_total_license_costs(data, license_costs):
 
 def format_number(value):
     return "{:,.0f}".format(value).replace(',', ' ')
+
+
+def send_email(subject, body, to_email):
+    from_email = "test333.hr@yandex.ru"
+    from_password = "vpfejdeejijwpmat"
+
+    msg = MIMEMultipart()
+    msg['From'] = from_email
+    msg['To'] = to_email
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'plain'))
+
+    server = smtplib.SMTP('smtp.yandex.com', 465)
+    server.starttls()
+    server.login(from_email, from_password)
+    text = msg.as_string()
+    server.sendmail(from_email, to_email, text)
+    server.quit()
+
+
+async def send_contact_data(state: FSMContext):
+    data = await state.get_data()
+    contact_info = (
+        f"Имя: {data['contact_name']}\n"
+        f"Телефон: {data['contact_phone']}\n"
+        f"Email: {data['contact_email']}\n"
+        f"Предпочтительный канал связи: {data['contact_preference']}\n"
+    )
+    send_email("Новый запрос на связь", contact_info, "test333.hr@yandex.ru")
 
 
 @dp.message()

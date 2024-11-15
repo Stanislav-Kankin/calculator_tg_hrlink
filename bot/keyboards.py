@@ -17,3 +17,12 @@ def get_start_keyboard():
             text="Приступисть к расчётам", callback_data="start_form")]
     ])
     return keyboard
+
+
+def get_contact_keyboard():
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="Свяжитесь со мной", callback_data="contact_me"
+            )]
+    ])
+    return keyboard
