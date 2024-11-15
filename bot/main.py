@@ -403,7 +403,7 @@ def format_number(value):
 async def send_contact_data(state: FSMContext):
     data = await state.get_data()
     contact_info = (
-        "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>"
+        "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
         f"Имя: {data['contact_name']}\n"
         f"Телефон: {data['contact_phone']}\n"
         f"Email: {data['contact_email']}\n"
