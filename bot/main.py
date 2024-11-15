@@ -22,6 +22,7 @@ from email.mime.multipart import MIMEMultipart
 
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
+CHAT_ID = config('CHAT_ID')
 # MAIL_P = config('MAIL_P')
 
 bot = Bot(token=BOT_TOKEN)
@@ -403,25 +404,6 @@ def format_number(value):
     return "{:,.0f}".format(value).replace(',', ' ')
 
 
-def send_email(subject, body, to_email):
-    from_email = "test333.hr@yandex.ru"
-    from_password = "vpfejdeejijwpmat"
-
-    msg = MIMEMultipart()
-    msg['From'] = from_email
-    msg['To'] = to_email
-    msg['Subject'] = subject
-
-    msg.attach(MIMEText(body, 'plain'))
-
-    server = smtplib.SMTP('smtp.yandex.com', 465)
-    server.starttls()
-    server.login(from_email, from_password)
-    text = msg.as_string()
-    server.sendmail(from_email, to_email, text)
-    server.quit()
-
-
 async def send_contact_data(state: FSMContext):
     data = await state.get_data()
     contact_info = (
@@ -430,7 +412,8 @@ async def send_contact_data(state: FSMContext):
         f"Email: {data['contact_email']}\n"
         f"Предпочтительный канал связи: {data['contact_preference']}\n"
     )
-    send_email("Новый запрос на связь", contact_info, "test333.hr@yandex.ru")
+    await bot.send_message(chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML)
+
 
 
 @dp.message()
