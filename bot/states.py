@@ -2,6 +2,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class Form(StatesGroup):
+    user_id = State()
     organization_name = State()
     employee_count = State()
     hr_specialist_count = State()
