@@ -1,6 +1,9 @@
 import asyncio
+import os
+
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, CallbackQuery
+from aiogram.types.input_file import FSInputFile
 from aiogram.filters import CommandStart
 from aiogram.enums import ParseMode
 from aiogram.fsm.context import FSMContext
@@ -14,6 +17,8 @@ from database import init_db
 from decouple import Config, RepositoryEnv
 from states import Form
 from keyboards import get_keyboard, get_start_keyboard, get_contact_keyboard
+
+from graph import generate_cost_graph
 
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
@@ -298,6 +303,13 @@ async def save_data(message: Message, state: FSMContext):
     await message.answer(
         user_text, reply_markup=get_contact_keyboard(),
         parse_mode=ParseMode.HTML)
+
+    # Генерация и отправка графика
+    graph_path = generate_cost_graph(total_paper_costs, total_logistics_costs, total_operations_costs, total_license_costs)
+    await message.answer_photo(FSInputFile(graph_path))
+
+    # Удаление временного файла графика
+    os.remove(graph_path)
 
     await state.clear()
 
