@@ -311,7 +311,7 @@ async def save_data(message: Message, state: FSMContext):
         f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
     )
 
-    await message.answer(results, parse_mode=ParseMode.HTML)
+    # await message.answer(results, parse_mode=ParseMode.HTML)
     await message.answer(
         user_text, reply_markup=get_contact_keyboard(),
         parse_mode=ParseMode.HTML)
@@ -467,10 +467,10 @@ async def send_contact_data(state: FSMContext):
 
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
-        f"Имя: {data['contact_name']}\n"
-        f"Телефон: {data['contact_phone']}\n"
-        f"Email: {data['contact_email']}\n"
-        f"Предпочтительный канал связи: {data['contact_preference']}\n"
+        f"<b>Имя:</b> {data['contact_name']}\n"
+        f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
+        f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
+        f"<b>Предпочтительный канал связи:</b> {data['contact_preference']}\n"
     )
 
     await bot.send_message(chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML)
