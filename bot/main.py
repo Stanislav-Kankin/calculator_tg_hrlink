@@ -458,6 +458,7 @@ async def send_contact_data(state: FSMContext):
         f"<b>Сумма КЭДО от HRlink:</b> {format_number(entry.total_license_costs) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
         "\n"
         f"<b>Время расчета:</b> {entry.timestamp}\n"
+        "______________________________\n"
         for entry in user_data_entries
     ])
 
