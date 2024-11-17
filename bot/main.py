@@ -302,7 +302,8 @@ async def save_data(message: Message, state: FSMContext):
     user_text = (
         "<b>ВАРИАНТ ВЫВОДА ДЛЯ ПОЛЬЗОВАТЕЛЯ (КЛИЕНТА)</b>\n"
         "\n"
-        f"Сумма текущих трат на КДП на бумаге: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
+        f"<b>Сумма текущих трат на КДП на бумаге: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
+        "\n"
         f"Распечатывание, хранение документов: <b>{format_number(total_paper_costs)}</b>\n"
         f"Расходы на доставку документов: <b>{format_number(total_logistics_costs)}</b>\n"
         f"Расходы на оплату времени по работе с документами: <b>{format_number(total_operations_costs)}</b>\n"
@@ -312,7 +313,7 @@ async def save_data(message: Message, state: FSMContext):
         f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
     )
 
-    await message.answer(results, parse_mode=ParseMode.HTML)
+    # await message.answer(results, parse_mode=ParseMode.HTML)
     await message.answer(
         user_text, reply_markup=get_contact_keyboard(),
         parse_mode=ParseMode.HTML)
