@@ -453,9 +453,11 @@ async def send_contact_data(state: FSMContext):
         f"<b>Средняя зарплата:</b> {entry.average_salary}\n"
         f"<b>Стоимость курьерской доставки:</b> {entry.courier_delivery_cost}\n"
         f"<b>Процент отправки кадровых документов:</b> {entry.hr_delivery_percentage}\n"
-        f"<b>Время расчета:</b> {entry.timestamp}\n"
+        "\n"
         f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(entry.total_paper_costs + entry.total_logistics_costs + entry.total_operations_costs) if entry.total_paper_costs is not None and entry.total_logistics_costs is not None and entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
         f"<b>Сумма КЭДО от HRlink:</b> {format_number(entry.total_license_costs) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
+        "\n"
+        f"<b>Время расчета:</b> {entry.timestamp}\n"
         for entry in user_data_entries
     ])
 
