@@ -315,7 +315,7 @@ async def save_data(message: Message, state: FSMContext):
 
     # await message.answer(results, parse_mode=ParseMode.HTML)
     await message.answer(
-        user_text)
+        user_text, parse_mode=ParseMode.HTML)
     await message.answer(
         'Для того чтобы обсудить проект или задать свои вопросы, '
         'нажмите кнопку ниже для связи с нами, заполните информацию и '
