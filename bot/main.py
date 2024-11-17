@@ -58,6 +58,7 @@ async def start_form(callback_query: CallbackQuery, state: FSMContext):
     await state.set_state(Form.organization_name)
     await state.update_data(user_id=callback_query.from_user.id)
 
+
 @dp.message(lambda message: message.text.lower() == 'заново')
 async def restart_form(message: Message, state: FSMContext):
     await state.clear()
@@ -311,7 +312,7 @@ async def save_data(message: Message, state: FSMContext):
         f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
     )
 
-    # await message.answer(results, parse_mode=ParseMode.HTML)
+    await message.answer(results, parse_mode=ParseMode.HTML)
     await message.answer(
         user_text, reply_markup=get_contact_keyboard(),
         parse_mode=ParseMode.HTML)
