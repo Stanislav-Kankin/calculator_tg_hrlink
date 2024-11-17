@@ -236,6 +236,14 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
 async def save_data(message: Message, state: FSMContext):
     data = await state.get_data()
     session = Session()
+
+    # Проверка на количество записей для одного user_id
+    user_data_entries = session.query(UserData).filter_by(user_id=message.from_user.id).all()
+    if len(user_data_entries) >= 5:
+        # Удаление самой старой записи
+        oldest_entry = session.query(UserData).filter_by(user_id=message.from_user.id).order_by(UserData.timestamp.asc()).first()
+        session.delete(oldest_entry)
+
     user_data = UserData(
         user_id=message.from_user.id,
         organization_name=data['organization_name'],
@@ -248,27 +256,28 @@ async def save_data(message: Message, state: FSMContext):
         courier_delivery_cost=data['courier_delivery_cost'],
         hr_delivery_percentage=data.get('hr_delivery_percentage', 0)
     )
+
     session.add(user_data)
     session.commit()
-    session.close()
 
     # Расчеты
     documents_per_year = calculate_documents_per_year(data)
     pages_per_year = calculate_pages_per_year(data)
     total_paper_costs = calculate_total_paper_costs(pages_per_year)
-    total_logistics_costs = calculate_total_logistics_costs(
-        data, documents_per_year
-        )
+    total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
     cost_per_minute = calculate_cost_per_minute(data)
-    total_operations_costs = calculate_total_operations_costs(
-        data, documents_per_year, cost_per_minute
-        )
+    total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
 
     # Расчет суммы по использованию нашего решения
-    session = Session()
     license_costs = session.query(LicenseCosts).first()
-    session.close()
     total_license_costs = calculate_total_license_costs(data, license_costs)
+
+    # Сохранение результатов расчетов в базе данных
+    user_data.total_paper_costs = total_paper_costs
+    user_data.total_logistics_costs = total_logistics_costs
+    user_data.total_operations_costs = total_operations_costs
+    user_data.total_license_costs = total_license_costs
+    session.commit()
 
     # Вывод результатов
     results = (
@@ -293,9 +302,12 @@ async def save_data(message: Message, state: FSMContext):
         "<b>ВАРИАНТ ВЫВОДА ДЛЯ ПОЛЬЗОВАТЕЛЯ (КЛИЕНТА)</b>\n"
         "\n"
         f"Сумма текущих трат на КДП на бумаге: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
+        f"Распечатывание, хранение документов: <b>{format_number(total_paper_costs)}<b/>\n"
+        f"Расходы на доставку документов: {format_number(total_logistics_costs)}</b>\n"
+        f"Расходы на оплату времени по работе с документами: <b>{format_number{total_operations_costs}}</b>\n"
         "\n"
+        f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. \n"
         "\n"
-        f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. "
         f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
     )
 
@@ -312,6 +324,7 @@ async def save_data(message: Message, state: FSMContext):
     os.remove(graph_path)
 
     await state.clear()
+    session.close()
 
 
 @dp.callback_query(lambda c: c.data == "contact_me")
@@ -386,7 +399,7 @@ def calculate_total_paper_costs(pages_per_year):
 def calculate_total_logistics_costs(data, documents_per_year):
     courier_delivery_cost = data['courier_delivery_cost']
     hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
-    return courier_delivery_cost * hr_delivery_percentage / 100 * documents_per_year
+    return courier_delivery_cost * (hr_delivery_percentage / 100 * documents_per_year)
 
 
 def calculate_cost_per_minute(data):
@@ -419,10 +432,6 @@ def calculate_total_license_costs(data, license_costs):
     )
 
 
-def format_number(value):
-    return "{:,.0f}".format(value).replace(',', ' ')
-
-
 async def send_contact_data(state: FSMContext):
     data = await state.get_data()
     if 'user_id' not in data:
@@ -444,7 +453,9 @@ async def send_contact_data(state: FSMContext):
         f"<b>Средняя зарплата:</b> {entry.average_salary}\n"
         f"<b>Стоимость курьерской доставки:</b> {entry.courier_delivery_cost}\n"
         f"<b>Процент отправки кадровых документов:</b> {entry.hr_delivery_percentage}\n"
-        f"<b>Время расчета:</b> {entry.timestamp}\n"  # Добавление времени расчета
+        f"<b>Время расчета:</b> {entry.timestamp}\n"
+        f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(entry.total_paper_costs + entry.total_logistics_costs + entry.total_operations_costs) if entry.total_paper_costs is not None and entry.total_logistics_costs is not None and entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
+        f"<b>Сумма КЭДО от HRlink:</b> {format_number(entry.total_license_costs) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
         for entry in user_data_entries
     ])
 
@@ -464,7 +475,6 @@ async def send_contact_data(state: FSMContext):
     for message in messages:
         await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
 
-
 @dp.message()
 async def echo(message: Message):
     user_text = (
@@ -483,6 +493,10 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext):
         await restart_form(callback_query.message, state)
     elif callback_query.data == "stop":
         await stop_form(callback_query.message, state)
+
+
+def format_number(value):
+    return "{:,.0f}".format(value).replace(',', ' ')
 
 
 async def main():

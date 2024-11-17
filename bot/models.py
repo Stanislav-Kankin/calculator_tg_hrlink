@@ -21,6 +21,10 @@ class UserData(Base):
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
     timestamp = Column(DateTime, default=datetime.now())
+    total_paper_costs = Column(Float)
+    total_logistics_costs = Column(Float)
+    total_operations_costs = Column(Float)
+    total_license_costs = Column(Float)
 
 
 class PaperCosts(Base):
