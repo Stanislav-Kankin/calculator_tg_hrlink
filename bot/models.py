@@ -50,5 +50,5 @@ class TypicalOperations(Base):
     __tablename__ = 'typical_operations'
     id = Column(Integer, primary_key=True)
     time_of_printing = Column(Integer, default=3)
-    time_of_signing = Column(Integer, default=3)
+    time_of_signing = Column(Integer, default=7)
     tome_of_archiving = Column(Integer, default=3)
