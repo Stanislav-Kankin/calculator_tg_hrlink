@@ -300,7 +300,7 @@ async def save_data(message: Message, state: FSMContext):
     )
 
     user_text = (
-        "<b>ВАРИАНТ ВЫВОДА ДЛЯ ПОЛЬЗОВАТЕЛЯ (КЛИЕНТА)</b>\n"
+        "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
         f"<b>Сумма текущих трат на КДП на бумаге: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
         "\n"
@@ -315,8 +315,14 @@ async def save_data(message: Message, state: FSMContext):
 
     # await message.answer(results, parse_mode=ParseMode.HTML)
     await message.answer(
-        user_text, reply_markup=get_contact_keyboard(),
-        parse_mode=ParseMode.HTML)
+        user_text)
+    await message.answer(
+        'Для того чтобы обсудить проект или задать свои вопросы, '
+        'нажмите кнопку ниже для связи с нами, заполните информацию и '
+        'мы обязательно свяжемся в Вами в ближайшее время.',
+        reply_markup=get_contact_keyboard(),
+        parse_mode=ParseMode.HTML
+    )
 
     # Генерация и отправка графика
     graph_path = generate_cost_graph(total_paper_costs, total_logistics_costs, total_operations_costs, total_license_costs)
