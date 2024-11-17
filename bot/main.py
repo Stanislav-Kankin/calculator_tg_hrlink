@@ -11,7 +11,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, UserData, PaperCosts, LicenseCosts
+from models import Base, UserData, PaperCosts, LicenseCosts, TypicalOperations
 from database import init_db
 
 from decouple import Config, RepositoryEnv
@@ -381,7 +381,7 @@ def calculate_documents_per_year(data):
     employee_count = data['employee_count']
     documents_per_employee = data['documents_per_employee']
     turnover_percentage = data['turnover_percentage']
-    return employee_count * documents_per_employee * (1 + turnover_percentage / 100)
+    return employee_count * (documents_per_employee * (1 + turnover_percentage / 100))
 
 
 def calculate_pages_per_year(data):
@@ -410,7 +410,25 @@ def calculate_cost_per_minute(data):
 
 
 def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
-    return cost_per_minute * documents_per_year
+    session = Session()
+    typical_operations = session.query(TypicalOperations).first()
+    session.close()
+
+    if not typical_operations:
+        raise ValueError("Нет данных.")
+
+    # Стоимость каждой операции в минутах
+    time_of_printing = typical_operations.time_of_printing
+    time_of_signing = typical_operations.time_of_signing
+    time_of_archiving = typical_operations.tome_of_archiving
+
+    # Общая стоимость всех операций за год
+    total_operations_costs = (
+        (time_of_printing + time_of_signing + time_of_archiving) *
+        cost_per_minute * documents_per_year
+    )
+
+    return total_operations_costs
 
 
 def calculate_total_license_costs(data, license_costs):
