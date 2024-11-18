@@ -8,7 +8,6 @@ class Form(StatesGroup):
     documents_per_employee = State()
     pages_per_document = State()
     turnover_percentage = State()
-    average_salary = State()
     average_hr_salary = State()  # Новое состояние
     courier_delivery_cost = State()
     hr_delivery_percentage = State()

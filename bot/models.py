@@ -17,7 +17,7 @@ class UserData(Base):
     pages_per_document = Column(Float)
     turnover_percentage = Column(Float)
     working_minutes_per_month = Column(Integer, default=10080)
-    average_salary = Column(Float)
+    average_hr_salary = Column(Float)  # Новое поле для средней зарплаты кадровых специалистов
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
     timestamp = Column(DateTime, default=datetime.now())
