@@ -43,7 +43,7 @@ async def cmd_start(message: Message):
     user_text = (
         'Приветствую!\n'
         'Это бот для расчёта <b>выгоды от перехода на КЭДО</b>\n'
-        'Как будете готовы, нажмите кнопку <b>"Приступить к расчётам"</b>.'
+        'Как будете готовы, нажмите кнопку <b>"Приступисть к расчётам"</b>.'
     )
     await message.answer(
         text=user_text, reply_markup=get_start_keyboard(),
@@ -75,7 +75,7 @@ async def stop_form(message: Message, state: FSMContext):
     await message.answer(
         "Вы прекратили ввод данных."
         "Напишите /start для начала расчётов."
-    )
+        )
 
 
 @dp.message(Form.organization_name)
@@ -175,14 +175,14 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
         return
     await state.update_data(turnover_percentage=value)
     await message.answer(
-        "Средняя зарплата кадрового специалиста с учетом НДФЛ и налогов, руб.?",
+        "Средняя зарплата сотрудника с учетом НДФЛ и налогов, руб.?",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
-    await state.set_state(Form.average_hr_salary)
+    await state.set_state(Form.average_salary)
     await state.update_data(user_id=message.from_user.id)
 
 
-@dp.message(Form.average_hr_salary)
-async def process_average_hr_salary(message: Message, state: FSMContext):
+@dp.message(Form.average_salary)
+async def process_average_salary(message: Message, state: FSMContext):
     try:
         value = float(message.text)
     except ValueError:
@@ -190,7 +190,7 @@ async def process_average_hr_salary(message: Message, state: FSMContext):
             "Пожалуйста, введите число.",
             reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
-    await state.update_data(average_hr_salary=value)
+    await state.update_data(average_salary=value)
     await message.answer(
         "Сколько стоит 1 курьерская доставка?\n"
         "Укажите 0 если нет курьерских доставок.",
@@ -253,7 +253,7 @@ async def save_data(message: Message, state: FSMContext):
         documents_per_employee=data['documents_per_employee'],
         pages_per_document=data['pages_per_document'],
         turnover_percentage=data['turnover_percentage'],
-        average_hr_salary=data['average_hr_salary'],
+        average_salary=data['average_salary'],
         courier_delivery_cost=data['courier_delivery_cost'],
         hr_delivery_percentage=data.get('hr_delivery_percentage', 0)
     )
@@ -407,15 +407,13 @@ def calculate_total_paper_costs(pages_per_year):
 def calculate_total_logistics_costs(data, documents_per_year):
     courier_delivery_cost = data['courier_delivery_cost']
     hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
-    return courier_delivery_cost * (
-        hr_delivery_percentage / 100 * documents_per_year
-        )
+    return courier_delivery_cost * (hr_delivery_percentage / 100 * documents_per_year)
 
 
 def calculate_cost_per_minute(data):
-    average_hr_salary = data['average_hr_salary']
+    average_salary = data['average_salary']
     working_minutes_per_month = data.get('working_minutes_per_month', 10080)
-    return average_hr_salary / working_minutes_per_month
+    return average_salary / working_minutes_per_month
 
 
 def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
@@ -478,7 +476,7 @@ async def send_contact_data(state: FSMContext):
         f"<b>Документов в год на сотрудника:</b> {entry.documents_per_employee}\n"
         f"<b>Страниц в документе:</b> {entry.pages_per_document}\n"
         f"<b>Текучка в процентах:</b> {entry.turnover_percentage}%\n"
-        f"<b>Средняя зарплата кадрового специалиста:</b> {entry.average_hr_salary} руб.\n"
+        f"<b>Средняя зарплата:</b> {entry.average_salary} руб.\n"
         f"<b>Стоимость курьерской доставки:</b> {entry.courier_delivery_cost} руб.\n"
         f"<b>Процент отправки кадровых документов:</b> {entry.hr_delivery_percentage}%\n"
         "\n"
@@ -505,7 +503,6 @@ async def send_contact_data(state: FSMContext):
     await bot.send_message(chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML)
     for message in messages:
         await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
-
 
 @dp.message()
 async def echo(message: Message):
