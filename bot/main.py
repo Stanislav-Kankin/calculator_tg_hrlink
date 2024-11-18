@@ -177,7 +177,7 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
     await message.answer(
         "Средняя зарплата сотрудников с учетом НДФЛ и налогов, руб.?\n"
         "Вопрос важен для корректного расчёта затраичваемого "
-        "сотрудников времени на работу с бумажным документом.",
+        "сотрудниками времени на работу с бумажным документом.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.average_salary)
     await state.update_data(user_id=message.from_user.id)
