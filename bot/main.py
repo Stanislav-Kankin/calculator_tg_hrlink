@@ -192,6 +192,23 @@ async def process_average_salary(message: Message, state: FSMContext):
         return
     await state.update_data(average_salary=value)
     await message.answer(
+        "Средняя зарплата кадрового специалиста с учетом НДФЛ и налогов, руб.?",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+    await state.set_state(Form.average_hr_salary)
+    await state.update_data(user_id=message.from_user.id)
+
+
+@dp.message(Form.average_hr_salary)
+async def process_average_hr_salary(message: Message, state: FSMContext):
+    try:
+        value = float(message.text)
+    except ValueError:
+        await message.answer(
+            "Пожалуйста, введите число.",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        return
+    await state.update_data(average_hr_salary=value)
+    await message.answer(
         "Сколько стоит 1 курьерская доставка?\n"
         "Укажите 0 если нет курьерских доставок.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
@@ -411,9 +428,9 @@ def calculate_total_logistics_costs(data, documents_per_year):
 
 
 def calculate_cost_per_minute(data):
-    average_salary = data['average_salary']
+    average_hr_salary = data['average_hr_salary']
     working_minutes_per_month = data.get('working_minutes_per_month', 10080)
-    return average_salary / working_minutes_per_month
+    return average_hr_salary / working_minutes_per_month
 
 
 def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
