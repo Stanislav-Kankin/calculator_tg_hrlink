@@ -407,7 +407,9 @@ def calculate_total_paper_costs(pages_per_year):
 def calculate_total_logistics_costs(data, documents_per_year):
     courier_delivery_cost = data['courier_delivery_cost']
     hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
-    return courier_delivery_cost * (hr_delivery_percentage / 100 * documents_per_year)
+    return courier_delivery_cost * (
+        hr_delivery_percentage / 100 * documents_per_year
+        )
 
 
 def calculate_cost_per_minute(data):
