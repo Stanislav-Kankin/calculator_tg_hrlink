@@ -17,7 +17,7 @@ class UserData(Base):
     pages_per_document = Column(Float)
     turnover_percentage = Column(Float)
     working_minutes_per_month = Column(Integer, default=10080)
-    average_hr_salary = Column(Float)  # Новое поле для средней зарплаты кадровых специалистов
+    average_salary = Column(Float)
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
     timestamp = Column(DateTime, default=datetime.now())
@@ -49,6 +49,6 @@ class LicenseCosts(Base):
 class TypicalOperations(Base):
     __tablename__ = 'typical_operations'
     id = Column(Integer, primary_key=True)
-    time_of_printing = Column(Integer, default=2)
-    time_of_signing = Column(Integer, default=5)
-    tome_of_archiving = Column(Integer, default=2)
+    time_of_printing = Column(Integer, default=3)
+    time_of_signing = Column(Integer, default=7)
+    tome_of_archiving = Column(Integer, default=3)
