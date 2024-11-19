@@ -49,6 +49,6 @@ class LicenseCosts(Base):
 class TypicalOperations(Base):
     __tablename__ = 'typical_operations'
     id = Column(Integer, primary_key=True)
-    time_of_printing = Column(Integer, default=2)
+    time_of_printing = Column(Integer, default=1)
     time_of_signing = Column(Integer, default=3)
-    tome_of_archiving = Column(Integer, default=2)
+    tome_of_archiving = Column(Integer, default=1)
