@@ -43,7 +43,7 @@ class LicenseCosts(Base):
     id = Column(Integer, primary_key=True)
     main_license_cost = Column(Float, default=15000)
     hr_license_cost = Column(Float, default=15000)
-    employee_license_cost = Column(Float, default=1000)
+    employee_license_cost = Column(Float, default=700)
 
 
 class TypicalOperations(Base):

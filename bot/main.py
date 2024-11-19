@@ -23,7 +23,6 @@ from graph import generate_cost_graph
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
 CHAT_ID = config('CHAT_ID')
-# MAIL_P = config('MAIL_P')
 
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
@@ -241,10 +240,14 @@ async def save_data(message: Message, state: FSMContext):
     session = Session()
 
     # Проверка на количество записей для одного user_id
-    user_data_entries = session.query(UserData).filter_by(user_id=message.from_user.id).all()
+    user_data_entries = session.query(UserData).filter_by(
+        user_id=message.from_user.id
+        ).all()
     if len(user_data_entries) >= 5:
         # Удаление самой старой записи
-        oldest_entry = session.query(UserData).filter_by(user_id=message.from_user.id).order_by(UserData.timestamp.asc()).first()
+        oldest_entry = session.query(UserData).filter_by(
+            user_id=message.from_user.id
+            ).order_by(UserData.timestamp.asc()).first()
         session.delete(oldest_entry)
 
     user_data = UserData(
@@ -267,9 +270,13 @@ async def save_data(message: Message, state: FSMContext):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_year = calculate_pages_per_year(data)
     total_paper_costs = calculate_total_paper_costs(pages_per_year)
-    total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
+    total_logistics_costs = calculate_total_logistics_costs(
+        data, documents_per_year
+        )
     cost_per_minute = calculate_cost_per_minute(data)
-    total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
+    total_operations_costs = calculate_total_operations_costs(
+        data, documents_per_year, cost_per_minute
+        )
 
     # Расчет суммы по использованию нашего решения
     license_costs = session.query(LicenseCosts).first()
@@ -289,30 +296,52 @@ async def save_data(message: Message, state: FSMContext):
         f"Документов в год: <b>{format_number(documents_per_year)}</b>\n"
         f"Страниц в год: <b>{format_number(pages_per_year)}</b>\n"
         "\n"
-        f"Итого расходы на бумагу: <b>{format_number(total_paper_costs)}</b> руб.\n"
+        f"Итого расходы на бумагу: <b>{format_number(
+            total_paper_costs
+            )}</b> руб.\n"
         "\n"
-        f"Итого расходы на логистику: <b>{format_number(total_logistics_costs)}</b> руб.\n"
+        f"Итого расходы на логистику: <b>{format_number(
+            total_logistics_costs
+            )}</b> руб.\n"
         "\n"
-        f"Стоимость минуты работника: <b>{format_number(cost_per_minute)}</b> руб.\n"
+        f"Стоимость минуты работника: <b>{format_number(
+            cost_per_minute
+            )}</b> руб.\n"
         "\n"
-        f"Сумма трат на операции:<b> {format_number(total_operations_costs)}</b> руб.\n"
-        f"Сумма текущих трат на КДП на бумаге: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
+        f"Сумма трат на операции:<b> {format_number(
+            total_operations_costs
+            )}</b> руб.\n"
+        f"Сумма текущих трат на КДП на бумаге: <b>{format_number(
+            total_paper_costs + total_logistics_costs + total_operations_costs
+            )}</b> руб.\n"
         f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. "
-        f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
+        f"Сумма выгоды: <b>{format_number(
+            total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs
+            )}</b> руб."
     )
 
     user_text = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
-        f"Распечатывание, хранение документов: <b>{format_number(total_paper_costs)}</b> руб.\n"
-        f"Расходы на доставку документов: <b>{format_number(total_logistics_costs)}</b> руб.\n"
-        f"Расходы на оплату времени по работе с документами: <b>{format_number(total_operations_costs)}</b> руб.\n"
+        f"Распечатывание, хранение документов: <b>{format_number(
+            total_paper_costs
+            )}</b> руб.\n"
+        f"Расходы на доставку документов: <b>{format_number(
+            total_logistics_costs
+            )}</b> руб.\n"
+        f"Расходы на оплату времени по работе с документами: <b>{format_number(
+            total_operations_costs
+            )}</b> руб.\n"
         "\n"
-        f"<b>Итого расходы при КДП на бумаге: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
+        f"<b>Итого расходы при КДП на бумаге: {format_number(
+            total_paper_costs + total_logistics_costs + total_operations_costs
+            )}</b> руб.\n"
         "\n"
         f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. \n"
         "\n"
-        f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб."
+        f"Сумма выгоды: <b>{format_number(
+            total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs
+            )}</b> руб."
     )
 
     # await message.answer(results, parse_mode=ParseMode.HTML)
@@ -327,7 +356,9 @@ async def save_data(message: Message, state: FSMContext):
     )
 
     # Генерация и отправка графика
-    graph_path = generate_cost_graph(total_paper_costs, total_logistics_costs, total_operations_costs, total_license_costs)
+    graph_path = generate_cost_graph(
+        total_paper_costs, total_logistics_costs, total_operations_costs, total_license_costs
+        )
     await message.answer_photo(FSInputFile(graph_path))
 
     # Удаление временного файла графика
@@ -444,15 +475,15 @@ def calculate_total_license_costs(data, license_costs):
     employee_count = data['employee_count']
     hr_specialist_count = data['hr_specialist_count']
     if employee_count <= 500:
-        employee_license_cost = 1000
+        employee_license_cost = 700
     elif employee_count <= 1499:
-        employee_license_cost = 900
+        employee_license_cost = 700
     elif employee_count <= 5000:
-        employee_license_cost = 850
+        employee_license_cost = 700
     elif employee_count <= 10000:
-        employee_license_cost = 800
+        employee_license_cost = 700
     else:
-        employee_license_cost = 750
+        employee_license_cost = 700
     return (
         license_costs.main_license_cost +
         (license_costs.hr_license_cost * hr_specialist_count) +
@@ -479,8 +510,12 @@ async def send_contact_data(state: FSMContext):
         f"<b>Страниц в документе:</b> {entry.pages_per_document}\n"
         f"<b>Текучка в процентах:</b> {entry.turnover_percentage}%\n"
         f"<b>Средняя зарплата:</b> {entry.average_salary} руб.\n"
-        f"<b>Стоимость курьерской доставки:</b> {entry.courier_delivery_cost} руб.\n"
-        f"<b>Процент отправки кадровых документов:</b> {entry.hr_delivery_percentage}%\n"
+        f"<b>Стоимость курьерской доставки:</b> {
+            entry.courier_delivery_cost
+            } руб.\n"
+        f"<b>Процент отправки кадровых документов:</b> {
+            entry.hr_delivery_percentage
+            }%\n"
         "\n"
         f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(entry.total_paper_costs + entry.total_logistics_costs + entry.total_operations_costs) if entry.total_paper_costs is not None and entry.total_logistics_costs is not None and entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
         f"<b>Сумма КЭДО от HRlink:</b> {format_number(entry.total_license_costs) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
