@@ -291,33 +291,15 @@ async def save_data(message: Message, state: FSMContext):
 
     # Вывод результатов
     results = (
-        "<b>ЭТО ВАРИАНТ ТЕСТОВОЙ ИНФОРМАЦИИ ДЛЯ РАЗРАБОТКИ</b>\n"
-        "\n"
-        f"Документов в год: <b>{format_number(documents_per_year)}</b>\n"
-        f"Страниц в год: <b>{format_number(pages_per_year)}</b>\n"
-        "\n"
-        f"Итого расходы на бумагу: <b>{format_number(
-            total_paper_costs
-            )}</b> руб.\n"
-        "\n"
-        f"Итого расходы на логистику: <b>{format_number(
-            total_logistics_costs
-            )}</b> руб.\n"
-        "\n"
-        f"Стоимость минуты работника: <b>{format_number(
-            cost_per_minute
-            )}</b> руб.\n"
-        "\n"
-        f"Сумма трат на операции:<b> {format_number(
-            total_operations_costs
-            )}</b> руб.\n"
-        f"Сумма текущих трат на КДП на бумаге: <b>{format_number(
-            total_paper_costs + total_logistics_costs + total_operations_costs
-            )}</b> руб.\n"
-        f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. "
-        f"Сумма выгоды: <b>{format_number(
-            total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs
-            )}</b> руб."
+        f"<b>Название организации:</b> {data['organization_name']}\n"
+        f"<b>Число сотрудников:</b> {data['employee_count']}\n"
+        f"<b>Число кадровых специалистов:</b> {data['hr_specialist_count']}\n"
+        f"<b>Документов в год на сотрудника:</b> {data['documents_per_employee']}\n"
+        f"<b>Страниц в документе:</b> {data['pages_per_document']}\n"
+        f"<b>Текучка в процентах:</b> {data['turnover_percentage']}%\n"
+        f"<b>Средняя зарплата:</b> {data['average_salary']} руб.\n"
+        f"<b>Стоимость курьерской доставки:</b> {data['courier_delivery_cost']} руб.\n"
+        f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 0)}%\n"
     )
 
     user_text = (
@@ -347,7 +329,9 @@ async def save_data(message: Message, state: FSMContext):
             )}</b> руб."
     )
 
-    # await message.answer(results, parse_mode=ParseMode.HTML)
+    await message.answer(
+        f"<b>Вы ввели следующие даныне:</b>\n{results}",
+        parse_mode=ParseMode.HTML)
     await message.answer(
         user_text, parse_mode=ParseMode.HTML)
     await message.answer(

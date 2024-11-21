@@ -29,3 +29,13 @@ def get_contact_keyboard():
             callback_data="restart")]
     ])
     return keyboard
+
+
+def get_confirm_keyboard():
+    keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text="Подтвердить", callback_data="confirm")],
+        [InlineKeyboardButton(
+            text="Внести данные заново", callback_data="restart")]
+    ])
+    return keyboard
