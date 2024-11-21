@@ -301,6 +301,14 @@ async def save_data(message: Message, state: FSMContext):
         f"<b>Стоимость курьерской доставки:</b> {data['courier_delivery_cost']} руб.\n"
         f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 0)}%\n"
     )
+    await message.answer(
+        f"<b>Вы ввели следующие даныне:</b>\n{results}",
+        parse_mode=ParseMode.HTML)
+    # Уведомление о печати
+    await bot.send_chat_action(chat_id=message.chat.id, action='typing')
+
+    # Пауза
+    await asyncio.sleep(4)
 
     user_text = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
@@ -329,9 +337,6 @@ async def save_data(message: Message, state: FSMContext):
             )}</b> руб."
     )
 
-    await message.answer(
-        f"<b>Вы ввели следующие даныне:</b>\n{results}",
-        parse_mode=ParseMode.HTML)
     await message.answer(
         user_text, parse_mode=ParseMode.HTML)
     await message.answer(
