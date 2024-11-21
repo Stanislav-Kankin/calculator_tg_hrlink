@@ -308,7 +308,7 @@ async def save_data(message: Message, state: FSMContext):
     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
 
     # Пауза
-    await asyncio.sleep(4)
+    await asyncio.sleep(3)
 
     user_text = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
