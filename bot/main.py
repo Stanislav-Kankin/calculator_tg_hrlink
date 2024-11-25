@@ -533,7 +533,7 @@ async def send_contact_data(state: FSMContext):
 
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
-        f"<b><code>ИНН организации:</code></b> {data['organization_inn']}\n"
+        f"<b>ИНН организации:</b> <code>{data['organization_inn']}</code>\n"
         f"<b>Имя:</b> {data['contact_name']}\n"
         f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
