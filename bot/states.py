@@ -13,6 +13,7 @@ class Form(StatesGroup):
     courier_delivery_cost = State()
     hr_delivery_percentage = State()
     contact_name = State()
+    organization_inn = State()
     contact_phone = State()
     contact_email = State()
     contact_preference = State()

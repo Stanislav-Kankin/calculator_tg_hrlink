@@ -373,6 +373,16 @@ async def contact_me(callback_query: CallbackQuery, state: FSMContext):
 async def process_contact_name(message: Message, state: FSMContext):
     await state.update_data(contact_name=message.text)
     await message.answer(
+        "<b>Укажите ИНН Вашей организации</b>",
+        parse_mode=ParseMode.HTML)
+    await state.set_state(Form.organization_inn)
+    await state.update_data(user_id=message.from_user.id)
+
+
+@dp.message(Form.organization_inn)
+async def process_organization_inn(message: Message, state: FSMContext):
+    await state.update_data(organization_inn=message.text)
+    await message.answer(
         "<b>Номер телефона для связи?</b>",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.contact_phone)
@@ -523,15 +533,21 @@ async def send_contact_data(state: FSMContext):
 
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
+        f"<b>ИНН организации:</b> {data['organization_inn']}\n"
         f"<b>Имя:</b> {data['contact_name']}\n"
         f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
         f"<b>Предпочтительный канал связи:</b> {data['contact_preference']}\n"
     )
 
-    await bot.send_message(chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML)
+    await bot.send_message(
+        chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML
+        )
     for message in messages:
-        await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
+        await bot.send_message(
+            chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML
+            )
+
 
 @dp.message()
 async def echo(message: Message):
