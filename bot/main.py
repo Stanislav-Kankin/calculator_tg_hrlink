@@ -40,8 +40,10 @@ Session = sessionmaker(bind=engine)
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
     user_text = (
-        'Приветствую!\n'
-        'Это бот для расчёта <b>выгоды от перехода на КЭДО</b>\n'
+        'Здравствуйте.\n'
+        'Это бот для расчёта <b>выгоды перехода на КЭДО</b>\n'
+        'Вам будет задано несколько вопросов по текущим процессам КДП.\n'
+        'А бот наглядно покажет разницу между бумагой и КЭДО\n'
         'Как будете готовы, нажмите кнопку <b>"Приступисть к расчётам"</b>.'
     )
     await message.answer(
@@ -111,8 +113,8 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
         return
     await state.update_data(hr_specialist_count=int(message.text))
     await message.answer(
-        "Сколько в среднем документов в год на сотрудника?\n"
-        "Обычно около 30, укажите конкретно по Вашей организации.",
+        "Сколько в среднем один сотрудник подписывает документов в год?\n"
+        "Обычно это 30 документов, укажите конкретно по Вашей организации.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.documents_per_employee)
     await state.update_data(user_id=message.from_user.id)
@@ -134,9 +136,9 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
     await state.update_data(documents_per_employee=int(value))
     await message.answer(
         "Сколько в среднем страниц в документе?\n"
-        "Обычно это 2.1 страницы, введите Ваше значение\n"
-        "Для разделения дробной части используйте точку.",
-        reply_markup=get_keyboard()
+        "Обычно это 1.5 страницы, введите Ваше значение\n"
+        "<b>Для разделения дробной части используйте точку.</b>",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
     )
     await state.set_state(Form.pages_per_document)
     await state.update_data(user_id=message.from_user.id)
@@ -174,9 +176,12 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
         return
     await state.update_data(turnover_percentage=value)
     await message.answer(
-        "Средняя зарплата сотрудников с учетом НДФЛ и налогов, руб.?\n"
-        "Вопрос важен для корректного расчёта затраичваемого "
-        "сотрудниками времени на работу с бумажным документом.",
+        "Какова средняя заработная плата сотрудников с учетом НДФЛ "
+        "и налогов, руб. в месяц?\n"
+        "Этот вопрос имеет значение для точного расчёта времени, "
+        "которое сотрудники тратят на подписание бумажных документов, "
+        "вместо выполнения своих основных обязанностей. Эти затраты "
+        "можно сократить, перейдя на КЭДО.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.average_salary)
     await state.update_data(user_id=message.from_user.id)
@@ -193,7 +198,7 @@ async def process_average_salary(message: Message, state: FSMContext):
         return
     await state.update_data(average_salary=value)
     await message.answer(
-        "Сколько стоит 1 курьерская доставка?\n"
+        "Сколько стоит одна курьерская доставка документов? "
         "Укажите 0 если нет курьерских доставок.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.courier_delivery_cost)
@@ -213,7 +218,7 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
     if value > 0:
         await message.answer(
             "Какой % от общего числа доставок занимает "
-            "именно отправка кадровых документов?",
+            "именно отправка кадровых документов курьером?",
             reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_delivery_percentage)
     else:
@@ -340,7 +345,9 @@ async def save_data(message: Message, state: FSMContext):
     await message.answer(
         user_text, parse_mode=ParseMode.HTML)
     await message.answer(
-        'Для того чтобы обсудить проект или задать свои вопросы, '
+        'Для того чтобы разработать детальное <b>ТЭО</b> '
+        '(Технико Экономическое Обоснование), '
+        'обсудить проект или задать свои вопросы, '
         'нажмите кнопку ниже для связи с нами, заполните информацию и '
         'мы обязательно свяжемся в Вами в ближайшее время.',
         reply_markup=get_contact_keyboard(),
@@ -413,7 +420,8 @@ async def process_contact_email(message: Message, state: FSMContext):
 async def process_contact_preference(message: Message, state: FSMContext):
     await state.update_data(contact_preference=message.text)
     await message.answer(
-        "<b>Спасибо, данные записали и передали менеджеру, с Вами скоро свяжутся.</b>",
+        "<b>Спасибо, данные записали и передали менеджеру, "
+        "свяжемся с Вами в ближайшее время❤.</b>",
         reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
     await send_contact_data(state)
     await state.clear()
