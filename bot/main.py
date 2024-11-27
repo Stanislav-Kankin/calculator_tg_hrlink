@@ -472,14 +472,15 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     # Стоимость каждой операции в минутах
     time_of_printing = typical_operations.time_of_printing
     time_of_signing = typical_operations.time_of_signing
-    time_of_archiving = typical_operations.tome_of_archiving
+    time_of_archiving = typical_operations.time_of_archiving
 
     # Общая стоимость всех операций за год
     total_operations_costs = (
         (time_of_printing + time_of_signing + time_of_archiving) *
-        cost_per_minute * documents_per_year
+        cost_per_minute * documents_per_year * data['hr_specialist_count']
     )
 
+    print(total_operations_costs)
     return total_operations_costs
 
 
