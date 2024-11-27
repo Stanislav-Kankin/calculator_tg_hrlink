@@ -299,12 +299,18 @@ async def save_data(message: Message, state: FSMContext):
         f"<b>Название организации:</b> {data['organization_name']}\n"
         f"<b>Число сотрудников:</b> {data['employee_count']}\n"
         f"<b>Число кадровых специалистов:</b> {data['hr_specialist_count']}\n"
-        f"<b>Документов в год на сотрудника:</b> {data['documents_per_employee']}\n"
+        f"<b>Документов в год на сотрудника:</b> {data[
+            'documents_per_employee'
+            ]}\n"
         f"<b>Страниц в документе:</b> {data['pages_per_document']}\n"
         f"<b>Текучка в процентах:</b> {data['turnover_percentage']}%\n"
         f"<b>Средняя зарплата:</b> {data['average_salary']} руб.\n"
-        f"<b>Стоимость курьерской доставки:</b> {data['courier_delivery_cost']} руб.\n"
-        f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 0)}%\n"
+        f"<b>Стоимость курьерской доставки:</b> {data[
+            'courier_delivery_cost'
+            ]} руб.\n"
+        f"<b>Процент отправки кадровых документов:</b> {
+            data.get('hr_delivery_percentage', 0)
+            }%\n"
     )
     await message.answer(
         f"<b>Вы ввели следующие даныне:</b>\n{results}",
@@ -332,7 +338,9 @@ async def save_data(message: Message, state: FSMContext):
             total_paper_costs + total_logistics_costs + total_operations_costs
             )}</b> руб.\n"
         "\n"
-        f"<u><b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b></u> руб. \n"
+        f"<u><b>Сумма КЭДО от HRlink: {format_number(
+            total_license_costs
+            )}</b></u> руб. \n"
         "В эту сумму входит: \n"
         "<b>Базовая лицензия</b> (рабочее пространство) \n"
         "<b>Лицензия Кадрового специалиста(ов)</b> \n"
@@ -343,9 +351,9 @@ async def save_data(message: Message, state: FSMContext):
         f"<b>{format_number(total_license_costs / 12)}</b>руб.\n"
         "\n"
         f"Сумма выгоды: <b>{format_number(
-            total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs
+            total_paper_costs + total_logistics_costs +
+            total_operations_costs - total_license_costs
             )}</b> руб. "
-        
     )
 
     await message.answer(
@@ -362,7 +370,8 @@ async def save_data(message: Message, state: FSMContext):
 
     # Генерация и отправка графика
     graph_path = generate_cost_graph(
-        total_paper_costs, total_logistics_costs, total_operations_costs, total_license_costs
+        total_paper_costs, total_logistics_costs,
+        total_operations_costs, total_license_costs
         )
     await message.answer_photo(FSInputFile(graph_path))
 
@@ -437,7 +446,9 @@ def calculate_documents_per_year(data):
     employee_count = data['employee_count']
     documents_per_employee = data['documents_per_employee']
     turnover_percentage = data['turnover_percentage']
-    return employee_count * (documents_per_employee * (1 + turnover_percentage / 100))
+    return employee_count * (
+        documents_per_employee * (1 + turnover_percentage / 100)
+        )
 
 
 def calculate_pages_per_year(data):
@@ -450,7 +461,10 @@ def calculate_total_paper_costs(pages_per_year):
     session = Session()
     paper_costs = session.query(PaperCosts).first()
     session.close()
-    return pages_per_year * (paper_costs.page_cost + paper_costs.printing_cost + paper_costs.storage_cost + paper_costs.rent_cost)
+    return pages_per_year * (
+        paper_costs.page_cost + paper_costs.printing_cost +
+        paper_costs.storage_cost + paper_costs.rent_cost
+        )
 
 
 def calculate_total_logistics_costs(data, documents_per_year):
@@ -467,7 +481,9 @@ def calculate_cost_per_minute(data):
     return average_salary / working_minutes_per_month
 
 
-def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
+def calculate_total_operations_costs(
+        data, documents_per_year, cost_per_minute
+        ):
     session = Session()
     typical_operations = session.query(TypicalOperations).first()
     session.close()
@@ -540,8 +556,13 @@ async def send_contact_data(state: FSMContext):
             entry.hr_delivery_percentage
             }%\n"
         "\n"
-        f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(entry.total_paper_costs + entry.total_logistics_costs + entry.total_operations_costs) if entry.total_paper_costs is not None and entry.total_logistics_costs is not None and entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
-        f"<b>Сумма КЭДО от HRlink:</b> {format_number(entry.total_license_costs) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
+        f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(
+            entry.total_paper_costs + entry.total_logistics_costs +
+            entry.total_operations_costs
+            ) if entry.total_paper_costs is not None and entry.total_logistics_costs is not None and entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
+        f"<b>Сумма КЭДО от HRlink:</b> {format_number(
+            entry.total_license_costs
+            ) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
         "\n"
         f"<b>Время расчета:</b> {entry.timestamp}\n"
         "______________________________\n"
@@ -550,7 +571,9 @@ async def send_contact_data(state: FSMContext):
 
     # Разделение сообщения на части
     max_message_length = 4096  # Максимальная длина сообщения в Telegram
-    messages = [user_data_info[i:i + max_message_length] for i in range(0, len(user_data_info), max_message_length)]
+    messages = [user_data_info[i:i + max_message_length] for i in range(
+        0, len(user_data_info), max_message_length
+        )]
 
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
