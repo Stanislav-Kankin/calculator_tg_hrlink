@@ -478,9 +478,10 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
 
     # Общая стоимость всех операций за год
     total_operations_costs = (
-        full_time *
-        cost_per_minute * data['hr_specialist_count']
-    )
+        full_time * cost_per_minute *
+        data['hr_specialist_count'] * documents_per_year
+        )
+
 
     print(f'time: {full_time}')
     print(f'coast per min{cost_per_minute}')
