@@ -32,8 +32,8 @@ class PaperCosts(Base):
 
     id = Column(Integer, primary_key=True)
     page_cost = Column(Float, default=0.8)
-    printing_cost = Column(Float, default=1.63)
-    storage_cost = Column(Float, default=1.45)
+    printing_cost = Column(Float, default=1.23)
+    storage_cost = Column(Float, default=1.01)
     rent_cost = Column(Float, default=0.64)
 
 
