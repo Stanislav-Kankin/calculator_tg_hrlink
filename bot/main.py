@@ -313,7 +313,7 @@ async def save_data(message: Message, state: FSMContext):
     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
 
     # Пауза
-    await asyncio.sleep(3)
+    await asyncio.sleep(2)
 
     user_text = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
@@ -339,7 +339,9 @@ async def save_data(message: Message, state: FSMContext):
         "\n"
         f"Сумма выгоды: <b>{format_number(
             total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs
-            )}</b> руб."
+            )}</b> руб. "
+            f"Стоимость решения КЭДО от HRlink в месяц: {format_number(total_license_costs) / 2} "
+            "руб."
     )
 
     await message.answer(
