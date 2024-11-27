@@ -51,4 +51,4 @@ class TypicalOperations(Base):
     id = Column(Integer, primary_key=True)
     time_of_printing = Column(Integer, default=3)
     time_of_signing = Column(Integer, default=4)
-    tome_of_archiving = Column(Integer, default=2)
+    time_of_archiving = Column(Integer, default=2)
