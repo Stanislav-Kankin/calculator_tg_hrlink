@@ -340,7 +340,7 @@ async def save_data(message: Message, state: FSMContext):
         f"Сумма выгоды: <b>{format_number(
             total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs
             )}</b> руб. "
-            f"Стоимость решения КЭДО от HRlink в месяц: {format_number(total_license_costs) / 2} "
+            f"Стоимость решения КЭДО от HRlink в месяц: {format_number(total_license_costs  / 2)} "
             "руб."
     )
 
