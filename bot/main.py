@@ -462,6 +462,7 @@ def calculate_cost_per_minute(data):
 def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     session = Session()
     typical_operations = session.query(TypicalOperations).first()
+    num_of_hr = session.qiery(UserData).first()
     session.close()
 
     if not typical_operations:
@@ -472,11 +473,20 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     time_of_signing = typical_operations.time_of_signing
     time_of_archiving = typical_operations.tome_of_archiving
 
+    hr_total_sum = num_of_hr.hr_specialist_count
+
+    cost_opertaions = (
+        time_of_printing * cost_per_minute
+        ) + (
+            time_of_signing * cost_per_minute
+            ) + (
+                time_of_archiving * cost_per_minute
+                )
+
     # Общая стоимость всех операций за год
     total_operations_costs = (
-        (time_of_printing + time_of_signing + time_of_archiving) *
-        cost_per_minute * documents_per_year
-    )
+        cost_opertaions * documents_per_year
+        ) * hr_total_sum
 
     return total_operations_costs
 
