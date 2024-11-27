@@ -450,7 +450,9 @@ def calculate_total_paper_costs(pages_per_year):
 def calculate_total_logistics_costs(data, documents_per_year):
     courier_delivery_cost = data['courier_delivery_cost']
     hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
-    return courier_delivery_cost * (hr_delivery_percentage / 100 * documents_per_year)
+    return courier_delivery_cost * (
+        hr_delivery_percentage / 100 * documents_per_year
+        )
 
 
 def calculate_cost_per_minute(data):
@@ -476,12 +478,9 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     hr_total_sum = num_of_hr.hr_specialist_count
 
     cost_opertaions = (
-        time_of_printing * cost_per_minute
-        ) + (
-            time_of_signing * cost_per_minute
-            ) + (
-                time_of_archiving * cost_per_minute
-                )
+        time_of_printing + time_of_signing + time_of_archiving
+        ) * cost_per_minute
+
 
     # Общая стоимость всех операций за год
     total_operations_costs = (
