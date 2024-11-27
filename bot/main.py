@@ -480,6 +480,9 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
         cost_per_minute * documents_per_year * data['hr_specialist_count']
     )
 
+    print(f'printing: {time_of_printing}')
+    print(f'signing: {time_of_signing}')
+    print(f'archiving: {time_of_archiving}')
     print(total_operations_costs)
     return total_operations_costs
 
