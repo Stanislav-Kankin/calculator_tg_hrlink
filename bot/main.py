@@ -469,11 +469,11 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     if not typical_operations:
         raise ValueError("Нет данных.")
 
-    time_of_printing = typical_operations.time_of_printing
-    time_of_signing = typical_operations.time_of_signing
-    time_of_archiving = typical_operations.tome_of_archiving
+    time_of_printing = typical_operations.time_of_printing * cost_per_minute
+    time_of_signing = typical_operations.time_of_signing * cost_per_minute
+    time_of_archiving = typical_operations.tome_of_archiving * cost_per_minute
     full_time = (
-        time_of_archiving + time_of_printing + time_of_signing
+        time_of_signing + time_of_archiving + time_of_printing
     )
 
     # Общая стоимость всех операций за год
