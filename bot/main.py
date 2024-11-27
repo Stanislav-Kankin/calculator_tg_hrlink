@@ -337,7 +337,7 @@ async def save_data(message: Message, state: FSMContext):
         "<b>Кадрового специалиста(ов)</b>, <b>Лицензии для сотрудников</b> (С возможностью "
         "выпустить <b>УНЭП</b>, так же в лицензию входит <b>5 СМС</b>)\n"
         "\n"
-        "Стоимость решения КЭДО от HRlink в месяц: "
+        "<u><i>Стоимость решения КЭДО от HRlink в месяц:</i></u> "
         f"<b>{format_number(total_license_costs / 12)}</b>руб.\n"
         "\n"
         f"Сумма выгоды: <b>{format_number(
