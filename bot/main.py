@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, CallbackQuery
@@ -403,7 +404,16 @@ async def process_contact_name(message: Message, state: FSMContext):
 
 @dp.message(Form.organization_inn)
 async def process_organization_inn(message: Message, state: FSMContext):
-    await state.update_data(organization_inn=message.text)
+    inn = message.text.strip()
+
+    # Проверка, что введенное значение состоит только из цифр и соответствует формату ИНН
+    if not re.match(r'^\d{10}$|^\d{12}$', inn):
+        await message.answer(
+            "<b>Неверный формат ИНН.</b> Пожалуйста, введите корректный ИНН (10 цифр для ООО или 12 цифр для ИП).",
+            parse_mode=ParseMode.HTML)
+        return
+
+    await state.update_data(organization_inn=inn)
     await message.answer(
         "<b>Номер телефона для связи?</b>",
         parse_mode=ParseMode.HTML)
