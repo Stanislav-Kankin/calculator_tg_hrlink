@@ -332,7 +332,7 @@ async def save_data(message: Message, state: FSMContext):
             total_paper_costs + total_logistics_costs + total_operations_costs
             )}</b> руб.\n"
         "\n"
-        f"<b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b> руб. \n"
+        f"<u><b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b></u> руб. \n"
         "Сюда входят: <b>Базовая лицензия</b> (рабочее пространство), <b>Лицензия</b> "
         "<b>Кадрового специалиста(ов)</b>, <b>Лицензии для сотрудников</b> (С возможностью "
         "выпустить <b>УНЭП</b>, так же в лицензию входит <b>5 СМС</b>)\n"
