@@ -477,7 +477,9 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     # Общая стоимость всех операций за год
     total_operations_costs = (
         (time_of_printing + time_of_signing + time_of_archiving) *
-        cost_per_minute * data['documents_per_employee'] * data['hr_specialist_count']
+        cost_per_minute * (
+            data['turnover_percentage'] / 100 * data['documents_per_employee']
+            ) * data['hr_specialist_count']
     )
 
     print(f'printing: {time_of_printing}')
