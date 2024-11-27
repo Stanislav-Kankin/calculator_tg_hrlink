@@ -481,10 +481,10 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
         ) * documents_per_year
 
     # print(f'time: {full_time}')
-    print(f'coast per min{cost_per_minute}')
-    print(f'docs per year {documents_per_year}')
-    print(f'num of hr {data['hr_specialist_count']}')
-    print(total_operations_costs)
+    # print(f'coast per min{cost_per_minute}')
+    # print(f'docs per year {documents_per_year}')
+    # print(f'num of hr {data['hr_specialist_count']}')
+    # print(total_operations_costs)
     return total_operations_costs
 
 
