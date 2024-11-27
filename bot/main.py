@@ -431,7 +431,7 @@ def calculate_documents_per_year(data):
     employee_count = data['employee_count']
     documents_per_employee = data['documents_per_employee']
     turnover_percentage = data['turnover_percentage']
-    return employee_count * (documents_per_employee * (1 + turnover_percentage / 100) * 1.5)
+    return employee_count * (documents_per_employee * (1 + turnover_percentage / 100))
 
 
 def calculate_pages_per_year(data):
