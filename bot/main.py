@@ -431,7 +431,7 @@ def calculate_documents_per_year(data):
     employee_count = data['employee_count']
     documents_per_employee = data['documents_per_employee']
     turnover_percentage = data['turnover_percentage']
-    return employee_count * (documents_per_employee * (1 + turnover_percentage / 100))
+    return employee_count * (documents_per_employee * (1 + turnover_percentage / 100) * 1.5)
 
 
 def calculate_pages_per_year(data):
@@ -469,21 +469,18 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     if not typical_operations:
         raise ValueError("Нет данных.")
 
-    time_of_printing = typical_operations.time_of_printing * cost_per_minute
-    time_of_signing = typical_operations.time_of_signing * cost_per_minute
-    time_of_archiving = typical_operations.tome_of_archiving * cost_per_minute
-    full_time = (
-        time_of_signing + time_of_archiving + time_of_printing
-    )
+    time_of_printing = typical_operations.time_of_printing
+    time_of_signing = typical_operations.time_of_signing
+    time_of_archiving = typical_operations.tome_of_archiving
 
     # Общая стоимость всех операций за год
     total_operations_costs = (
-        full_time * cost_per_minute *
-        data['hr_specialist_count'] * documents_per_year
-        )
+        (time_of_printing * cost_per_minute) +
+        (time_of_archiving * cost_per_minute) +
+        (time_of_signing * cost_per_minute)
+        ) * documents_per_year
 
-
-    print(f'time: {full_time}')
+    # print(f'time: {full_time}')
     print(f'coast per min{cost_per_minute}')
     print(f'docs per year {documents_per_year}')
     print(f'num of hr {data['hr_specialist_count']}')
