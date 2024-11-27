@@ -462,7 +462,7 @@ def calculate_cost_per_minute(data):
 def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     session = Session()
     typical_operations = session.query(TypicalOperations).first()
-    num_of_hr = session.qiery(UserData).first()
+    num_of_hr = session.query(UserData).first()
     session.close()
 
     if not typical_operations:
