@@ -176,10 +176,10 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
         return
     await state.update_data(turnover_percentage=value)
     await message.answer(
-        "Какая средняя заработная плата сотрудников с учетом НДФЛ "
-        "и налогов в месяц (руб.)?\n"
+        "Какая средняя заработная плата сотрудников одела кадров "
+        "с учетом НДФЛ и налогов в месяц (руб.)?\n"
         "Этот вопрос имеет значение <b>для точного расчёта времени,</b> "
-        "которое сотрудники тратят на подписание бумажных документов, "
+        "которое сотрудники ОК тратят на работу с бумажными документами, "
         "вместо выполнения своих основных обязанностей. Эти <b>траты</b> "
         "<b>можно сократить</b>, перейдя на КЭДО.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
@@ -340,7 +340,7 @@ async def save_data(message: Message, state: FSMContext):
         f"Сумма выгоды: <b>{format_number(
             total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs
             )}</b> руб. "
-            f"Стоимость решения КЭДО от HRlink в месяц: {format_number(total_license_costs  / 2)} "
+            f"Стоимость решения КЭДО от HRlink в месяц: <b>{format_number(total_license_costs  / 12)}</b> "
             "руб."
     )
 
