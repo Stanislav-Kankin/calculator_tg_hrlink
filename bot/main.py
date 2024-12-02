@@ -524,7 +524,7 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
 
     time_of_printing = typical_operations.time_of_printing
     time_of_signing = typical_operations.time_of_signing
-    time_of_archiving = typical_operations.time_of_archiving  # Исправлена опечатка
+    time_of_archiving = typical_operations.tome_of_archiving  # Исправлена опечатка
 
     logging.debug(f"time_of_printing: {time_of_printing}")
     logging.debug(f"time_of_signing: {time_of_signing}")
