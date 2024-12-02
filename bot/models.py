@@ -31,9 +31,9 @@ class PaperCosts(Base):
     __tablename__ = 'paper_costs'
 
     id = Column(Integer, primary_key=True)
-    page_cost = Column(Float, default=0.8)
-    printing_cost = Column(Float, default=0.5)
-    storage_cost = Column(Float, default=1.56)
+    page_cost = Column(Float, default=0.9)
+    printing_cost = Column(Float, default=0.8)
+    storage_cost = Column(Float, default=1.77)
     rent_cost = Column(Float, default=0.07)
 
 
@@ -49,6 +49,6 @@ class LicenseCosts(Base):
 class TypicalOperations(Base):
     __tablename__ = 'typical_operations'
     id = Column(Integer, primary_key=True)
-    time_of_printing = Column(Integer, default=1)
-    time_of_signing = Column(Integer, default=2)
-    tome_of_archiving = Column(Integer, default=1)
+    time_of_printing = Column(Integer, default=2)
+    time_of_signing = Column(Integer, default=4)
+    tome_of_archiving = Column(Integer, default=2)

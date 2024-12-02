@@ -285,8 +285,14 @@ async def save_data(message: Message, state: FSMContext):
         )
 
     # Расчет суммы по использованию нашего решения
+    employee_count = data['employee_count']
+    hr_specialist_count = data['hr_specialist_count']
     license_costs = session.query(LicenseCosts).first()
-    total_license_costs = calculate_total_license_costs(data, license_costs)
+    total_license_costs = (
+        license_costs.main_license_cost +
+        (license_costs.hr_license_cost * hr_specialist_count) +
+        (license_costs.employee_license_cost * employee_count)
+        )
 
     # Сохранение результатов расчетов в базе данных
     user_data.total_paper_costs = total_paper_costs
@@ -474,7 +480,7 @@ def calculate_total_paper_costs(pages_per_year):
     return pages_per_year * (
         paper_costs.page_cost + paper_costs.printing_cost +
         paper_costs.storage_cost + paper_costs.rent_cost
-        )
+    )
 
 
 def calculate_total_logistics_costs(data, documents_per_year):
@@ -520,24 +526,24 @@ def calculate_total_operations_costs(
     return total_operations_costs
 
 
-def calculate_total_license_costs(data, license_costs):
-    employee_count = data['employee_count']
-    hr_specialist_count = data['hr_specialist_count']
-    if employee_count <= 500:
-        employee_license_cost = 700
-    elif employee_count <= 1499:
-        employee_license_cost = 700
-    elif employee_count <= 5000:
-        employee_license_cost = 700
-    elif employee_count <= 10000:
-        employee_license_cost = 700
-    else:
-        employee_license_cost = 700
-    return (
-        license_costs.main_license_cost +
-        (license_costs.hr_license_cost * hr_specialist_count) +
-        (employee_license_cost * employee_count)
-    )
+# def calculate_total_license_costs(data, license_costs):
+#     employee_count = data['employee_count']
+#     hr_specialist_count = data['hr_specialist_count']
+#     if employee_count <= 500:
+#         employee_license_cost = 700
+#     elif employee_count <= 1499:
+#         employee_license_cost = 700
+#     elif employee_count <= 5000:
+#         employee_license_cost = 700
+#     elif employee_count <= 10000:
+#         employee_license_cost = 700
+#     else:
+#         employee_license_cost = 700
+#     return (
+#         license_costs.main_license_cost +
+#         (license_costs.hr_license_cost * hr_specialist_count) +
+#         (employee_license_cost * employee_count)
+#     )
 
 
 async def send_contact_data(state: FSMContext):
@@ -628,6 +634,7 @@ def format_number(value):
 
 
 async def main():
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 
