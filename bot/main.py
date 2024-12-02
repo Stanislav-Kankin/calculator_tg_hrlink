@@ -309,18 +309,12 @@ async def save_data(message: Message, state: FSMContext):
         f"<b>Название организации:</b> {data['organization_name']}\n"
         f"<b>Число сотрудников:</b> {data['employee_count']}\n"
         f"<b>Число кадровых специалистов:</b> {data['hr_specialist_count']}\n"
-        f"<b>Документов в год на сотрудника:</b> {data[
-            'documents_per_employee'
-            ]}\n"
+        f"<b>Документов в год на сотрудника:</b> {data['documents_per_employee']}\n"
         f"<b>Страниц в документе:</b> {data['pages_per_document']}\n"
         f"<b>Текучка в процентах:</b> {data['turnover_percentage']}%\n"
         f"<b>Средняя зарплата:</b> {data['average_salary']} руб.\n"
-        f"<b>Стоимость курьерской доставки:</b> {data[
-            'courier_delivery_cost'
-            ]} руб.\n"
-        f"<b>Процент отправки кадровых документов:</b> {
-            data.get('hr_delivery_percentage', 0)
-            }%\n"
+        f"<b>Стоимость курьерской доставки:</b> {data['courier_delivery_cost']} руб.\n"
+        f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 0)}%\n"
     )
     await message.answer(
         f"<b>Вы ввели следующие даныне:</b>\n{results}",
@@ -334,36 +328,22 @@ async def save_data(message: Message, state: FSMContext):
     user_text = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
-        f"Распечатывание, хранение документов: <b>{format_number(
-            total_paper_costs
-            )}</b> руб.\n"
-        f"Расходы на доставку документов: <b>{format_number(
-            total_logistics_costs
-            )}</b> руб.\n"
-        f"Расходы на оплату времени по работе с документами: <b>{format_number(
-            total_operations_costs
-            )}</b> руб.\n"
+        f"Распечатывание, хранение документов: <b>{format_number(total_paper_costs)}</b> руб.\n"
+        f"Расходы на доставку документов: <b>{format_number(total_logistics_costs)}</b> руб.\n"
+        f"Расходы на оплату времени по работе с документами: <b>{format_number(total_operations_costs)}</b> руб.\n"
         "\n"
-        f"<b>Итого расходы при КДП на бумаге: {format_number(
-            total_paper_costs + total_logistics_costs + total_operations_costs
-            )}</b> руб.\n"
+        f"<b>Итого расходы при КДП на бумаге: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> руб.\n"
         "\n"
-        f"<u><b>Сумма КЭДО от HRlink: {format_number(
-            total_license_costs
-            )}</b></u> руб. \n"
+        f"<u><b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b></u> руб. \n"
         "В эту сумму входит: \n"
         "<b>Базовая лицензия</b> (рабочее пространство) \n"
         "<b>Лицензия Кадрового специалиста(ов)</b> \n"
-        "<b>Лицензии для сотрудников</b> (С возможностью "
-        "выпустить <b>УНЭП</b>, так же в лицензию входит <b>5 СМС</b>)\n"
+        "<b>Лицензии для сотрудников</b> (С возможностью выпустить <b>УНЭП</b>, так же в лицензию входит <b>5 СМС</b>)\n"
         "\n"
         "<u><i>Стоимость решения КЭДО от HRlink в месяц:</i></u> "
         f"<b>{format_number(total_license_costs / 12)}</b>руб.\n"
         "\n"
-        f"Сумма выгоды: <b>{format_number(
-            total_paper_costs + total_logistics_costs +
-            total_operations_costs - total_license_costs
-            )}</b> руб. "
+        f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб. "
     )
 
     await message.answer(
