@@ -463,8 +463,8 @@ def calculate_documents_per_year(data):
     documents_per_employee = data['documents_per_employee']
     turnover_percentage = data['turnover_percentage']
     return employee_count * (
-        documents_per_employee * (1 + turnover_percentage / 100)
-        )
+        documents_per_employee * (
+            1 + turnover_percentage / 100))
 
 
 def calculate_pages_per_year(data):
@@ -485,10 +485,9 @@ def calculate_total_paper_costs(pages_per_year):
 
 def calculate_total_logistics_costs(data, documents_per_year):
     courier_delivery_cost = data['courier_delivery_cost']
-    hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
+    hr_delivery_percentage = data.get('hr_delivery_percentage')
     return courier_delivery_cost * (
-        hr_delivery_percentage / 100 * documents_per_year
-        )
+        hr_delivery_percentage / 100 * documents_per_year)
 
 
 def calculate_cost_per_minute(data):
@@ -498,8 +497,7 @@ def calculate_cost_per_minute(data):
 
 
 def calculate_total_operations_costs(
-        data, documents_per_year, cost_per_minute
-        ):
+        data, documents_per_year, cost_per_minute):
     session = Session()
     typical_operations = session.query(TypicalOperations).first()
     session.close()
@@ -511,39 +509,42 @@ def calculate_total_operations_costs(
     time_of_signing = typical_operations.time_of_signing
     time_of_archiving = typical_operations.tome_of_archiving
 
-    # Общая стоимость всех операций за год
     total_operations_costs = (
         (time_of_printing * cost_per_minute) +
         (time_of_archiving * cost_per_minute) +
         (time_of_signing * cost_per_minute)
-        ) * documents_per_year
+    ) * documents_per_year
 
-    # print(f'time: {full_time}')
-    # print(f'coast per min{cost_per_minute}')
-    # print(f'docs per year {documents_per_year}')
-    # print(f'num of hr {data['hr_specialist_count']}')
-    # print(total_operations_costs)
     return total_operations_costs
 
 
-# def calculate_total_license_costs(data, license_costs):
-#     employee_count = data['employee_count']
-#     hr_specialist_count = data['hr_specialist_count']
-#     if employee_count <= 500:
-#         employee_license_cost = 700
-#     elif employee_count <= 1499:
-#         employee_license_cost = 700
-#     elif employee_count <= 5000:
-#         employee_license_cost = 700
-#     elif employee_count <= 10000:
-#         employee_license_cost = 700
-#     else:
-#         employee_license_cost = 700
-#     return (
-#         license_costs.main_license_cost +
-#         (license_costs.hr_license_cost * hr_specialist_count) +
-#         (employee_license_cost * employee_count)
-#     )
+def calculate_total_license_costs(data, license_costs):
+    hr_specialist_count = data['hr_specialist_count']
+    employee_count = data['employee_count']
+    return (
+        license_costs.hr_license_cost * hr_specialist_count +
+        license_costs.employee_license_cost * employee_count +
+        license_costs.main_license_cost
+    )
+
+
+def calculate_costs(data, paper_costs, license_costs, typical_operations):
+    documents_per_year = calculate_documents_per_year(data)
+    pages_per_year = calculate_pages_per_year(data)
+    total_paper_costs = calculate_total_paper_costs(pages_per_year)
+    total_logistics_costs = calculate_total_logistics_costs(
+        data, documents_per_year)
+    cost_per_minute = calculate_cost_per_minute(data)
+    total_operations_costs = calculate_total_operations_costs(
+        data, documents_per_year, cost_per_minute)
+    total_license_costs = calculate_total_license_costs(data, license_costs)
+
+    return {
+        "total_paper_costs": total_paper_costs,
+        "total_logistics_costs": total_logistics_costs,
+        "total_operations_costs": total_operations_costs,
+        "total_license_costs": total_license_costs
+    }
 
 
 async def send_contact_data(state: FSMContext):
