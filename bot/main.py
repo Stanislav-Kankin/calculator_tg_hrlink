@@ -20,6 +20,9 @@ from states import Form
 from keyboards import get_keyboard, get_start_keyboard, get_contact_keyboard
 
 from graph import generate_cost_graph
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
@@ -462,30 +465,40 @@ def calculate_documents_per_year(data):
     employee_count = data['employee_count']
     documents_per_employee = data['documents_per_employee']
     turnover_percentage = data['turnover_percentage']
-    return employee_count * (
+    result = employee_count * (
         documents_per_employee * (
             1 + turnover_percentage / 100))
+    logging.debug(f"Calculated documents per year: {result}")
+    return result
 
 
 def calculate_pages_per_year(data):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_document = data['pages_per_document']
-    return documents_per_year * pages_per_document
+    result = documents_per_year * pages_per_document
+    logging.debug(f"Calculated pages per year: {result}")
+    return result
 
 
 def calculate_total_paper_costs(pages_per_year):
     session = Session()
     paper_costs = session.query(PaperCosts).first()
     session.close()
-    return pages_per_year * (
+    result = pages_per_year * (
         paper_costs.page_cost + paper_costs.printing_cost +
         paper_costs.storage_cost + paper_costs.rent_cost
     )
+    logging.debug(f"Calculated total paper costs: {result}")
+    return result
 
 
 def calculate_total_logistics_costs(data, documents_per_year):
     courier_delivery_cost = data['courier_delivery_cost']
     hr_delivery_percentage = data.get('hr_delivery_percentage')
+    logging.debug(f"LOGISTIC COST: {courier_delivery_cost *(
+        hr_delivery_percentage / 100 * documents_per_year
+
+    )}")
     return courier_delivery_cost * (
         hr_delivery_percentage / 100 * documents_per_year)
 
@@ -493,6 +506,7 @@ def calculate_total_logistics_costs(data, documents_per_year):
 def calculate_cost_per_minute(data):
     average_salary = data['average_salary']
     working_minutes_per_month = data.get('working_minutes_per_month', 10080)
+    logging.debug(f"cost per min: {average_salary / working_minutes_per_month}")
     return average_salary / working_minutes_per_month
 
 
@@ -514,6 +528,7 @@ def calculate_total_operations_costs(
         (time_of_archiving * cost_per_minute) +
         (time_of_signing * cost_per_minute)
     ) * documents_per_year
+    logging.debug(f"TOTAL OPER COST: {total_operations_costs}")
 
     return total_operations_costs
 
