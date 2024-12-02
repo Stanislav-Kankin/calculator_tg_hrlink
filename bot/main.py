@@ -495,12 +495,16 @@ def calculate_total_paper_costs(pages_per_year):
 def calculate_total_logistics_costs(data, documents_per_year):
     courier_delivery_cost = data['courier_delivery_cost']
     hr_delivery_percentage = data.get('hr_delivery_percentage')
-    logging.debug(f"LOGISTIC COST: {courier_delivery_cost *(
-        hr_delivery_percentage / 100 * documents_per_year
 
-    )}")
-    return courier_delivery_cost * (
-        hr_delivery_percentage / 100 * documents_per_year)
+    logging.debug(f"courier_delivery_cost: {courier_delivery_cost}")
+    logging.debug(f"hr_delivery_percentage: {hr_delivery_percentage}")
+
+    total_logistics_costs = courier_delivery_cost * (
+        hr_delivery_percentage / 100 * documents_per_year
+    )
+    logging.debug(f"LOGISTIC COST: {total_logistics_costs}")
+
+    return total_logistics_costs
 
 
 def calculate_cost_per_minute(data):
@@ -510,8 +514,7 @@ def calculate_cost_per_minute(data):
     return average_salary / working_minutes_per_month
 
 
-def calculate_total_operations_costs(
-        data, documents_per_year, cost_per_minute):
+def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
     session = Session()
     typical_operations = session.query(TypicalOperations).first()
     session.close()
@@ -521,7 +524,11 @@ def calculate_total_operations_costs(
 
     time_of_printing = typical_operations.time_of_printing
     time_of_signing = typical_operations.time_of_signing
-    time_of_archiving = typical_operations.tome_of_archiving
+    time_of_archiving = typical_operations.time_of_archiving  # Исправлена опечатка
+
+    logging.debug(f"time_of_printing: {time_of_printing}")
+    logging.debug(f"time_of_signing: {time_of_signing}")
+    logging.debug(f"time_of_archiving: {time_of_archiving}")
 
     total_operations_costs = (
         (time_of_printing * cost_per_minute) +
