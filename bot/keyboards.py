@@ -29,4 +29,3 @@ def get_contact_keyboard():
             callback_data="restart")]
     ])
     return keyboard
-

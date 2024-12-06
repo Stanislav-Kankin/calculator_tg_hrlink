@@ -43,6 +43,20 @@ Session = sessionmaker(bind=engine)
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username or "Имя пользователя не задано"
+
+    session = Session()
+    user_exists = session.query(UserData).filter_by(user_id=user_id).first()
+    session.close()
+
+    if not user_exists:
+        try:
+            await send_new_user_notification(user_id, username)
+        except aiogram.exceptions.TelegramBadRequest as e:
+            print(f"Ошибка при отправке уведомления: {e}")
+            print(f"CHAT_ID: {CHAT_ID}")
+
     user_text = (
         'Здравствуйте.\n'
         'Это бот для расчёта <b>выгоды перехода на КЭДО</b> 💰\n'
@@ -53,6 +67,15 @@ async def cmd_start(message: Message):
     await message.answer(
         text=user_text, reply_markup=get_start_keyboard(),
         parse_mode=ParseMode.HTML)
+
+
+async def send_new_user_notification(user_id: int, username: str):
+    notification_text = (
+        f"Новый пользователь начал пользоваться ботом:\n"
+        f"ID: {user_id}\n"
+        f"Username: {username}"
+    )
+    await bot.send_message(chat_id=CHAT_ID, text=notification_text)
 
 
 @dp.callback_query(lambda c: c.data == "start_form")
