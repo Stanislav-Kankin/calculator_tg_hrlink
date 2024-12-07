@@ -129,7 +129,13 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
         return
     await state.update_data(hr_specialist_count=int(message.text))
     await message.answer(
-        "Какой тип лицензии вы хотите выбрать? Базовая или Лайт, используйте кнопки внизу сообщения.",
+        "Какой тип лицензии вы хотите выбрать? <b>Базовая</b> или <b>Лайт</b>,"
+        "используйте кнопки внизу сообщения.\n"
+        "<b>Стандартная</b> лицензия включает в себя выпуск УНЭП, "
+        "5 СМС и полноценное подключение и настройка.\n"
+        "<b>Лайт</b> лицензия вклчюает только выпуск УНЭП без СМС оповещений, "
+        "Подразумевается что будет сразу использован канал связи электронная "
+        "почта или telegram. Интеграция производится силами клиента",
         reply_markup=get_license_type_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.license_type)
     await state.update_data(user_id=message.from_user.id)
