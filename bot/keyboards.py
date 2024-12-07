@@ -36,7 +36,7 @@ def get_license_type_keyboard():
         [InlineKeyboardButton(
             text="Стандартная лицензия 👍", callback_data="standard_license")],
         [InlineKeyboardButton(
-            text="Лицензия Lite", callback_data="lite_license"
+            text="Лицензия Lite 😎", callback_data="lite_license"
             )]
     ])
     return keyboard
