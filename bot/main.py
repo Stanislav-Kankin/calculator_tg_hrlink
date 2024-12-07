@@ -17,7 +17,9 @@ from database import init_db
 
 from decouple import Config, RepositoryEnv
 from states import Form
-from keyboards import get_keyboard, get_start_keyboard, get_contact_keyboard
+from keyboards import (
+    get_keyboard, get_start_keyboard,
+    get_contact_keyboard, get_license_type_keyboard)
 
 from graph import generate_cost_graph
 import logging
@@ -106,6 +108,33 @@ async def stop_form(message: Message, state: FSMContext):
         )
 
 
+@dp.callback_query(lambda c: c.data in ["standard_license", "lite_license"])
+async def process_license_type(callback_query: CallbackQuery, state: FSMContext):
+    license_type = "standard" if callback_query.data == "standard_license" else "lite"
+    await state.update_data(license_type=license_type)
+    await callback_query.message.answer(
+        "Сколько в среднем один сотрудник подписывает документов в год?\n"
+        "Обычно это 30 документов, укажите конкретно по Вашей организации.",
+        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+    await state.set_state(Form.documents_per_employee)
+    await state.update_data(user_id=callback_query.from_user.id)
+
+
+@dp.message(Form.hr_specialist_count)
+async def process_hr_specialist_count(message: Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer(
+            "Пожалуйста, введите <b>целое число.</b>",
+            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        return
+    await state.update_data(hr_specialist_count=int(message.text))
+    await message.answer(
+        "Какой тип лицензии вы хотите выбрать? Базовая или Лайт, используйте кнопки внизу сообщения.",
+        reply_markup=get_license_type_keyboard(), parse_mode=ParseMode.HTML)
+    await state.set_state(Form.license_type)
+    await state.update_data(user_id=message.from_user.id)
+
+
 @dp.message(Form.organization_name)
 async def process_organization_name(message: Message, state: FSMContext):
     await state.update_data(organization_name=message.text)
@@ -128,22 +157,6 @@ async def process_employee_count(message: Message, state: FSMContext):
         "Введите число <b>кадровых специалистов.</b>",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.hr_specialist_count)
-    await state.update_data(user_id=message.from_user.id)
-
-
-@dp.message(Form.hr_specialist_count)
-async def process_hr_specialist_count(message: Message, state: FSMContext):
-    if not message.text.isdigit():
-        await message.answer(
-            "Пожалуйста, введите <b>целое число.</b>",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
-        return
-    await state.update_data(hr_specialist_count=int(message.text))
-    await message.answer(
-        "Сколько в среднем один сотрудник подписывает документов в год?\n"
-        "Обычно это 30 документов, укажите конкретно по Вашей организации.",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
-    await state.set_state(Form.documents_per_employee)
     await state.update_data(user_id=message.from_user.id)
 
 
@@ -272,14 +285,10 @@ async def save_data(message: Message, state: FSMContext):
     session = Session()
 
     # Проверка на количество записей для одного user_id
-    user_data_entries = session.query(UserData).filter_by(
-        user_id=message.from_user.id
-        ).all()
+    user_data_entries = session.query(UserData).filter_by(user_id=message.from_user.id).all()
     if len(user_data_entries) >= 5:
         # Удаление самой старой записи
-        oldest_entry = session.query(UserData).filter_by(
-            user_id=message.from_user.id
-            ).order_by(UserData.timestamp.asc()).first()
+        oldest_entry = session.query(UserData).filter_by(user_id=message.from_user.id).order_by(UserData.timestamp.asc()).first()
         session.delete(oldest_entry)
 
     user_data = UserData(
@@ -287,6 +296,7 @@ async def save_data(message: Message, state: FSMContext):
         organization_name=data['organization_name'],
         employee_count=data['employee_count'],
         hr_specialist_count=data['hr_specialist_count'],
+        license_type=data.get('license_type', 'standard'),  # Сохранение типа лицензии
         documents_per_employee=data['documents_per_employee'],
         pages_per_document=data['pages_per_document'],
         turnover_percentage=data['turnover_percentage'],
@@ -302,13 +312,9 @@ async def save_data(message: Message, state: FSMContext):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_year = calculate_pages_per_year(data)
     total_paper_costs = calculate_total_paper_costs(pages_per_year)
-    total_logistics_costs = calculate_total_logistics_costs(
-        data, documents_per_year
-        )
+    total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
     cost_per_minute = calculate_cost_per_minute(data)
-    total_operations_costs = calculate_total_operations_costs(
-        data, documents_per_year, cost_per_minute
-        )
+    total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
 
     # Расчет суммы по использованию нашего решения
     employee_count = data['employee_count']
@@ -318,7 +324,7 @@ async def save_data(message: Message, state: FSMContext):
         license_costs.main_license_cost +
         (license_costs.hr_license_cost * hr_specialist_count) +
         (license_costs.employee_license_cost * employee_count)
-        )
+    )
 
     # Сохранение результатов расчетов в базе данных
     user_data.total_paper_costs = total_paper_costs
@@ -330,6 +336,7 @@ async def save_data(message: Message, state: FSMContext):
     # Вывод результатов
     results = (
         f"<b>Название организации:</b> {data['organization_name']}\n"
+        f"<b>Тип лицензии:</b> {data.get('license_type', 'standard')}\n"  # Вывод типа лицензии
         f"<b>Число сотрудников:</b> {data['employee_count']}\n"
         f"<b>Число кадровых специалистов:</b> {data['hr_specialist_count']}\n"
         f"<b>Документов в год на сотрудника:</b> {data['documents_per_employee']}\n"
@@ -339,9 +346,7 @@ async def save_data(message: Message, state: FSMContext):
         f"<b>Стоимость курьерской доставки:</b> {data['courier_delivery_cost']} руб.\n"
         f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 0)}%\n"
     )
-    await message.answer(
-        f"<b>Вы ввели следующие даныне:</b>\n{results}",
-        parse_mode=ParseMode.HTML)
+    await message.answer(f"<b>Вы ввели следующие данные:</b>\n{results}", parse_mode=ParseMode.HTML)
     # Уведомление о печати
     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
 
@@ -369,8 +374,7 @@ async def save_data(message: Message, state: FSMContext):
         f"Сумма выгоды: <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> руб. "
     )
 
-    await message.answer(
-        user_text, parse_mode=ParseMode.HTML)
+    await message.answer(user_text, parse_mode=ParseMode.HTML)
     await message.answer(
         'Для того чтобы разработать детальное <b>ТЭО</b> '
         '(Технико Экономическое Обоснование), '
@@ -385,7 +389,7 @@ async def save_data(message: Message, state: FSMContext):
     graph_path = generate_cost_graph(
         total_paper_costs, total_logistics_costs,
         total_operations_costs, total_license_costs
-        )
+    )
     await message.answer_photo(FSInputFile(graph_path))
 
     # Удаление временного файла графика
@@ -571,26 +575,18 @@ async def send_contact_data(state: FSMContext):
     # Формирование сообщения с данными из базы данных
     user_data_info = "\n".join([
         f"<b>Организация:</b> {entry.organization_name}\n"
+        f"<b>Тип лицензии:</b> <u>{entry.license_type}</u>\n"
         f"<b>Число сотрудников:</b> {entry.employee_count}\n"
         f"<b>Число кадровых специалистов:</b> {entry.hr_specialist_count}\n"
         f"<b>Документов в год на сотрудника:</b> {entry.documents_per_employee}\n"
         f"<b>Страниц в документе:</b> {entry.pages_per_document}\n"
         f"<b>Текучка в процентах:</b> {entry.turnover_percentage}%\n"
         f"<b>Средняя зарплата:</b> {entry.average_salary} руб.\n"
-        f"<b>Стоимость курьерской доставки:</b> {
-            entry.courier_delivery_cost
-            } руб.\n"
-        f"<b>Процент отправки кадровых документов:</b> {
-            entry.hr_delivery_percentage
-            }%\n"
+        f"<b>Стоимость курьерской доставки:</b> {entry.courier_delivery_cost} руб.\n"
+        f"<b>Процент отправки кадровых документов:</b> {entry.hr_delivery_percentage}%\n"
         "\n"
-        f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(
-            entry.total_paper_costs + entry.total_logistics_costs +
-            entry.total_operations_costs
-            ) if entry.total_paper_costs is not None and entry.total_logistics_costs is not None and entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
-        f"<b>Сумма КЭДО от HRlink:</b> {format_number(
-            entry.total_license_costs
-            ) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
+        f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(entry.total_paper_costs + entry.total_logistics_costs + entry.total_operations_costs) if entry.total_paper_costs is not None and entry.total_logistics_costs is not None and entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
+        f"<b>Сумма КЭДО от HRlink:</b> {format_number(entry.total_license_costs) if entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
         "\n"
         f"<b>Время расчета:</b> {entry.timestamp}\n"
         "______________________________\n"
@@ -599,9 +595,7 @@ async def send_contact_data(state: FSMContext):
 
     # Разделение сообщения на части
     max_message_length = 4096  # Максимальная длина сообщения в Telegram
-    messages = [user_data_info[i:i + max_message_length] for i in range(
-        0, len(user_data_info), max_message_length
-        )]
+    messages = [user_data_info[i:i + max_message_length] for i in range(0, len(user_data_info), max_message_length)]
 
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
@@ -610,15 +604,12 @@ async def send_contact_data(state: FSMContext):
         f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
         f"<b>Предпочтительный канал связи:</b> {data['contact_preference']}\n"
+        f"<b>Тип лицензии:</b> {data.get('license_type', 'standard')}\n"  # Вывод типа лицензии
     )
 
-    await bot.send_message(
-        chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML
-        )
+    await bot.send_message(chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML)
     for message in messages:
-        await bot.send_message(
-            chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML
-            )
+        await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
 
 
 @dp.message()

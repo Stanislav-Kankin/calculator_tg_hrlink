@@ -6,6 +6,7 @@ class Form(StatesGroup):
     organization_name = State()
     employee_count = State()
     hr_specialist_count = State()
+    license_type = State()  # Новое состояние
     documents_per_employee = State()
     pages_per_document = State()
     turnover_percentage = State()

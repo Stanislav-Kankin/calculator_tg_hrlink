@@ -29,3 +29,14 @@ def get_contact_keyboard():
             callback_data="restart")]
     ])
     return keyboard
+
+
+def get_license_type_keyboard():
+    keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(
+            text="Стандартная лицензия 👍", callback_data="standard_license")],
+        [InlineKeyboardButton(
+            text="Лицензия Lite", callback_data="lite_license"
+            )]
+    ])
+    return keyboard
