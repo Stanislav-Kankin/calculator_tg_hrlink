@@ -129,13 +129,19 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
         return
     await state.update_data(hr_specialist_count=int(message.text))
     await message.answer(
-        "Какой тип лицензии вы хотите выбрать? <b>Базовая</b> или <b>Лайт</b>,"
-        "используйте кнопки внизу сообщения.\n"
+        "Какой тип лицензии вы хотите выбрать?\n"
+        "<b>Стандартная</b> или <b>Лайт</b>,\n"
+        "\n"
         "<b>Стандартная</b> лицензия включает в себя выпуск УНЭП, "
-        "5 СМС и полноценное подключение и настройка.\n"
+        "5 СМС и полноценную помощь в подключении и настройке.\n"
+        "\n"
         "<b>Лайт</b> лицензия вклчюает только выпуск УНЭП без СМС оповещений, "
         "Подразумевается что будет сразу использован канал связи электронная "
-        "почта или telegram. Интеграция производится силами клиента",
+        "почта или telegram для уведомлений сотрудников "
+        "о постулплении документов. "
+        "Интеграция производится силами клиента\n"
+        "\n"
+        "<b>Используйте кнопки внизу сообщения.</b>",
         reply_markup=get_license_type_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.license_type)
     await state.update_data(user_id=message.from_user.id)
@@ -342,7 +348,7 @@ async def save_data(message: Message, state: FSMContext):
     # Вывод результатов
     results = (
         f"<b>Название организации:</b> {data['organization_name']}\n"
-        f"<b>Тип лицензии:</b> {data.get('license_type', 'standard')}\n"  # Вывод типа лицензии
+        f"<b>Тип лицензии:</b> <u>{data.get('license_type', 'standard')}</u>\n"
         f"<b>Число сотрудников:</b> {data['employee_count']}\n"
         f"<b>Число кадровых специалистов:</b> {data['hr_specialist_count']}\n"
         f"<b>Документов в год на сотрудника:</b> {data['documents_per_employee']}\n"
@@ -610,7 +616,7 @@ async def send_contact_data(state: FSMContext):
         f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
         f"<b>Предпочтительный канал связи:</b> {data['contact_preference']}\n"
-        f"<b>Тип лицензии:</b> {data.get('license_type', 'standard')}\n"  # Вывод типа лицензии
+        f"<b>Тип лицензии:</b> <u>{data.get('license_type', 'standard')}</u>\n"
     )
 
     await bot.send_message(chat_id=CHAT_ID, text=contact_info, parse_mode=ParseMode.HTML)
