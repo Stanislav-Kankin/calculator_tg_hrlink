@@ -49,11 +49,14 @@ def calculate_total_logistics_costs(data, documents_per_year):
 def calculate_cost_per_minute(data):
     average_salary = data['average_salary']
     working_minutes_per_month = data.get('working_minutes_per_month', 10080)
-    logging.debug(f"Calculated cost per minute: {average_salary / working_minutes_per_month}")
+    logging.debug(f"Calculated cost per minute: {
+        average_salary / working_minutes_per_month
+        }")
     return average_salary / working_minutes_per_month
 
 
-def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
+def calculate_total_operations_costs(
+        data, documents_per_year, cost_per_minute):
     session = Session()
     typical_operations = session.query(TypicalOperations).first()
     session.close()
@@ -64,14 +67,16 @@ def calculate_total_operations_costs(data, documents_per_year, cost_per_minute):
         (time_of_printing * cost_per_minute) +
         (time_of_archiving * cost_per_minute) +
         (time_of_signing * cost_per_minute)) * documents_per_year
-    logging.debug(f"Calculated total operations costs: {total_operations_costs}")
+    logging.debug(
+        f"Calculated total operations costs: {total_operations_costs}")
     return total_operations_costs
 
 
 def calculate_total_license_costs(data, license_costs):
     hr_specialist_count = data['hr_specialist_count']
     employee_count = data['employee_count']
-    license_type = data.get('license_type', 'standard')  # Получаем тип лицензии
+    license_type = data.get(
+        'license_type', 'standard')
 
     # Стоимость лицензии для сотрудников
     if license_type == 'standard':
