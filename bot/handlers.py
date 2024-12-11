@@ -269,7 +269,9 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
             "Пожалуйста, введите число.",
             reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         return
+
     await state.update_data(courier_delivery_cost=value)
+
     if value > 0:
         await message.answer(
             "Какой % от общего числа доставок занимает "
@@ -277,7 +279,9 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
             reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_delivery_percentage)
     else:
-        await save_data(message, state)
+        # Если стоимость курьерской доставки равна 0, пропускаем вопрос о проценте
+        await save_data(message, state, bot)
+
     await state.update_data(user_id=message.from_user.id)
 
 
