@@ -34,9 +34,18 @@ def get_contact_keyboard():
 def get_license_type_keyboard():
     keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text="Стандартная лицензия 👍", callback_data="standard_license")],
+            text="Стандартный КЭДО 😎", callback_data="standard_kedo"
+            )],
         [InlineKeyboardButton(
-            text="Лицензия Lite 😎", callback_data="lite_license"
+            text="Простой КЭДО 👍", callback_data="simple_kedo"
             )]
+    ])
+    return keyboard
+
+
+def get_confirmation_keyboard():
+    keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
+        [InlineKeyboardButton(text="Данные верны ✔", callback_data="confirm")],
+        [InlineKeyboardButton(text="Ввести заново ⚙", callback_data="restart")]
     ])
     return keyboard
