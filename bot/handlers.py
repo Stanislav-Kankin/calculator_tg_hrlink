@@ -594,13 +594,6 @@ async def confirm_data(message: Message, state: FSMContext):
     user_text = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
-        f"Распечатывание, хранение документов: <b>{
-            format_number(total_paper_costs)}</b> руб.\n"
-        f"Расходы на доставку документов: <b>{
-            format_number(total_logistics_costs)}</b> руб.\n"
-        f"Расходы на оплату времени по работе с документами: <b>{
-            format_number(total_operations_costs)}</b> руб.\n"
-        "\n"
         f"<b>Итого расходы при КДП на бумаге: {
             format_number(
                 total_paper_costs + total_logistics_costs +
@@ -608,7 +601,14 @@ async def confirm_data(message: Message, state: FSMContext):
                 )
                 }</b> руб.\n"
         "\n"
-        f"<u><b>Сумма КЭДО от HRlink: {format_number(total_license_costs)}</b></u> руб. \n"
+        f"Распечатывание, хранение документов: <b>{
+            format_number(total_paper_costs)}</b> руб.\n"
+        f"Расходы на доставку документов: <b>{
+            format_number(total_logistics_costs)}</b> руб.\n"
+        f"Расходы на оплату времени по работе с документами: <b>{
+            format_number(total_operations_costs)}</b> руб.\n"
+        "\n"
+        f"<u><b>Сумма КЭДО HRlink от: {format_number(total_license_costs)}</b></u> руб. \n"
         "В эту сумму входит: \n"
         "<b>Базовая лицензия</b> (рабочее пространство) \n"
         "<b>Лицензия Кадрового специалиста(ов)</b> \n"
