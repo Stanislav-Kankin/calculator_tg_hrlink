@@ -135,14 +135,14 @@ async def process_license_type(
             employee_license_cost = 700
             tariff_name = "HRlink Lite"
         else:
-            employee_license_cost = 700
+            employee_license_cost = 600
             tariff_name = "HRlink Enterprise"
     elif license_type == "standard":
         if 0 < employee_count <= 1999:
             employee_license_cost = 700
             tariff_name = "HRlink Standard"
         else:
-            employee_license_cost = 700
+            employee_license_cost = 600
             tariff_name = "HRlink Enterprise"
     else:
         employee_license_cost = 700
@@ -153,7 +153,7 @@ async def process_license_type(
 
     await callback_query.message.answer(
         "Сколько в среднем один сотрудник подписывает документов в год?\n"
-        "Обычно это 30 документов, укажите конкретно по Вашей организации.",
+        "Обычно это 28 - 40 документов, укажите конкретно по Вашей организации.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.documents_per_employee)
     await state.update_data(user_id=callback_query.from_user.id)
@@ -218,8 +218,7 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
     await state.update_data(documents_per_employee=int(value))
     await message.answer(
         "Сколько в среднем страниц в документе?\n"
-        "Обычно это 1.5 страницы, введите Ваше значение\n"
-        "<b>Для разделения дробной части используйте точку.</b>",
+        "Обычно это 1,5 страницы, введите Ваше значение:",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
     )
     await state.set_state(Form.pages_per_document)
@@ -278,7 +277,7 @@ async def process_average_salary(message: Message, state: FSMContext):
         return
     await state.update_data(average_salary=value)
     await message.answer(
-        "Сколько стоит одна курьерская доставка документов? "
+        "Сколько стоит одна курьерская доставка документов? \n"
         "Укажите 0 если нет курьерских доставок.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.courier_delivery_cost)
