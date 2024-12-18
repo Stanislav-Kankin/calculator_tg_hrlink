@@ -10,7 +10,8 @@ from models import UserData, LicenseCosts
 from states import Form
 from keyboards import (
     get_keyboard, get_start_keyboard,
-    get_contact_keyboard, get_license_type_keyboard, get_confirmation_keyboard
+    get_contact_keyboard, get_license_type_keyboard, get_confirmation_keyboard,
+    get_retry
 )
 from calculations import (
     calculate_documents_per_year, calculate_pages_per_year,
@@ -147,16 +148,19 @@ async def process_employee_count(message: Message, state: FSMContext):
             "- персональное сопровождение.\n"
             "\n"
             "<b>Используйте кнопки внизу сообщения.</b>",
-            reply_markup=get_license_type_keyboard(), parse_mode=ParseMode.HTML)
+            reply_markup=get_license_type_keyboard(),
+            parse_mode=ParseMode.HTML)
         await state.set_state(Form.license_type)
     elif 500 <= employee_count <= 1999:
-        await state.update_data(license_type="standard", employee_license_cost=700)
+        await state.update_data(
+            license_type="standard", employee_license_cost=700)
         await message.answer(
             "<b>Сколько кадровых специалистов в вашей компании?</b>",
             parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_specialist_count)
     elif employee_count >= 2000:
-        await state.update_data(license_type="enterprise", employee_license_cost=600)
+        await state.update_data(
+            license_type="enterprise", employee_license_cost=600)
         await message.answer(
             "<b>Сколько кадровых специалистов в вашей компании?</b>",
             parse_mode=ParseMode.HTML)
@@ -395,7 +399,7 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
             f"<b>Процент отправки кадровых документов:</b> {
                 data.get('hr_delivery_percentage', 0)}%\n"
             "<b>Подходящий тариф:</b> "
-            f"<u>{data.get('tariff_name', 'standard')}</u>\n"
+            f"<u>{get_tariff_name(data)}</u>\n"
         )
         await message.answer(
             f"<b>Вы ввели следующие данные:</b>\n{results}",
@@ -443,9 +447,9 @@ async def process_contact_email(message: Message, state: FSMContext):
 async def process_contact_preference(message: Message, state: FSMContext):
     await state.update_data(contact_preference=message.text)
     await message.answer(
-        "<b>Спасибо, данные записали и передали менеджеру, "
-        "свяжемся с Вами в ближайшее время❤.</b>",
-        reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
+        "Спасибо, передали информацию менеджеру, "
+        "свяжемся с вами в ближайшее время 💙",
+        reply_markup=get_retry(), parse_mode=ParseMode.HTML)
     await send_contact_data(state)
     await state.clear()
 
@@ -493,7 +497,7 @@ async def send_contact_data(state: FSMContext):
     if user_data_entries:
         latest_entry = user_data_entries[0]  # Берем последнюю запись
         user_data_info = (
-            f"<b>Тип лицензии:</b> <u>{latest_entry.license_type}</u>\n"
+            f"<b>Тип лицензии:</b> <u>{get_tariff_name(data)}</u>\n"
             f"<b>Число сотрудников:</b> {latest_entry.employee_count}\n"
             f"<b>Число кадровых специалистов:</b> {
                 latest_entry.hr_specialist_count}\n"
@@ -528,7 +532,7 @@ async def send_contact_data(state: FSMContext):
         f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
         f"<b>Название компании:</b> {data['organization_name']}\n"
-        f"<b>Тип лицензии:</b> <u>{data.get('tariff_name', 'HRlink Standard')}</u>\n"  # Используем tariff_name
+        f"<b>Тип лицензии:</b> <u>{get_tariff_name(data)}</u>\n"
     )
 
     # Отправка сообщений
@@ -593,24 +597,25 @@ async def confirm_data(message: Message, state: FSMContext):
             format_number(
                 total_paper_costs + total_logistics_costs +
                 total_operations_costs - total_license_costs)}</b> руб. "
-        f"<u><b>Стоимость HRlink для вашей компании от - {
-            format_number(total_license_costs)}</b></u> руб. \n"
+        f"<b>Стоимость HRlink для вашей компании от: {
+            format_number(total_license_costs)}</b> руб. \n"
         "<u><i>Стоимость решения КЭДО от HRlink в месяц от:</i></u> "
         f"<b>{format_number(total_license_costs / 12)}</b>руб.\n"
         "\n"
         "Точная цена рассчитывается менеджером индивидуально для каждого клиента."
         "\n"
-        "Вы получите:"
-
-        "— множество интеграций с учетными системами и не только;"
-        "— найм и работу с сотрудниками, самозанятыми и по ГПХ;"
-        "— легитимное подписание и хранение документов;"        "— удобный личный кабинет сотрудника;"
-        "— гибкие маршруты и процессы;"
+        "Вы получите:\n"
+        "\n"
+        "— множество интеграций с учетными системами и не только;\n"
+        "— найм и работу с сотрудниками, самозанятыми и по ГПХ;\n"
+        "— легитимное подписание и хранение документов;\n"
+        "— удобный личный кабинет сотрудника;\n"
+        "— гибкие маршруты и процессы;\n"
         "— все виды электронных подписей."
     )
 
     # Добавляем информацию о тарифе и цене лицензии
-    tariff_name = data.get("tariff_name", "HRlink Standard")
+    tariff_name = get_tariff_name(data)
     employee_license_cost = data.get("employee_license_cost", 700)
     user_text2 += (
         f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
@@ -665,3 +670,15 @@ async def send_new_user_notification(user_id: int, username: str):
 
 def format_number(value):
     return "{:,.0f}".format(value).replace(',', ' ')
+
+
+def get_tariff_name(data):
+    license_type = data.get('license_type', 'standard')
+    if license_type == 'lite':
+        return "HRlink Lite"
+    elif license_type == 'standard':
+        return "HRlink Standard"
+    elif license_type == 'enterprise':
+        return "HRlink Enterprise"
+    else:
+        return "HRlink Standard"  # По умолчанию

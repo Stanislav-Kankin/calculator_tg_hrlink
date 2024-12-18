@@ -82,7 +82,9 @@ def calculate_total_license_costs(data, license_costs):
     if license_type == 'standard':
         employee_license_cost = license_costs.employee_license_cost  # 700 руб.
     elif license_type == 'lite':
-        employee_license_cost = 500  # Lite лицензия стоит 500 руб.
+        employee_license_cost = 500
+    elif license_type == 'enterprise':
+        employee_license_cost = 600
 
     total_license_costs = (
         license_costs.main_license_cost +
