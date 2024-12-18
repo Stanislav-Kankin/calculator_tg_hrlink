@@ -34,10 +34,10 @@ def get_contact_keyboard():
 def get_license_type_keyboard():
     keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text="Стандартный КЭДО 😎", callback_data="standard_kedo"
+            text="HRlink Lite 👍", callback_data="simple_kedo"
             )],
         [InlineKeyboardButton(
-            text="Простой КЭДО 👍", callback_data="simple_kedo"
+            text="HRlink Standard 😎", callback_data="standard_kedo"
             )]
     ])
     return keyboard
