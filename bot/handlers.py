@@ -11,7 +11,7 @@ from states import Form
 from keyboards import (
     get_keyboard, get_start_keyboard,
     get_contact_keyboard, get_license_type_keyboard, get_confirmation_keyboard,
-    get_retry
+    get_retry_keyboard
 )
 from calculations import (
     calculate_documents_per_year, calculate_pages_per_year,
@@ -449,7 +449,7 @@ async def process_contact_preference(message: Message, state: FSMContext):
     await message.answer(
         "Спасибо, передали информацию менеджеру, "
         "свяжемся с вами в ближайшее время 💙",
-        reply_markup=get_retry(), parse_mode=ParseMode.HTML)
+        reply_markup=get_retry_keyboard(), parse_mode=ParseMode.HTML)
     await send_contact_data(state)
     await state.clear()
 

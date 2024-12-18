@@ -19,7 +19,7 @@ def get_start_keyboard():
     return keyboard
 
 
-def get_retry():
+def get_retry_keyboard():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="Начать заново", callback_data="start_form")]
