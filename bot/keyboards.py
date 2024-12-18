@@ -22,10 +22,10 @@ def get_start_keyboard():
 def get_contact_keyboard():
     keyboard = InlineKeyboardMarkup(row_width=2, inline_keyboard=[
         [InlineKeyboardButton(
-            text="Свяжитесь со мной 🙋‍♂️🙋‍♀️", callback_data="contact_me"
+            text="Оставить заявку 🙋‍♂️🙋‍♀️", callback_data="contact_me"
             )],
         [InlineKeyboardButton(
-            text="Начать расчёт заново ⚙",
+            text="Расчитать другой тариф ⚙",
             callback_data="restart")]
     ])
     return keyboard

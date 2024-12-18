@@ -58,7 +58,6 @@ def register_handlers(dp: Dispatcher):
         process_hr_delivery_percentage, Form.hr_delivery_percentage)
     dp.callback_query.register(contact_me, lambda c: c.data == "contact_me")
     dp.message.register(process_contact_name, Form.contact_name)
-    dp.message.register(process_organization_inn, Form.organization_inn)
     dp.message.register(process_contact_phone, Form.contact_phone)
     dp.message.register(process_contact_email, Form.contact_email)
     dp.message.register(process_contact_preference, Form.contact_preference)
@@ -118,46 +117,75 @@ async def stop_form(message: Message, state: FSMContext):
         )
 
 
+async def process_employee_count(message: Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer(
+            "Пожалуйста, введите <b>целое число.</b>",
+            parse_mode=ParseMode.HTML)
+        return
+
+    employee_count = int(message.text)
+    await state.update_data(employee_count=employee_count)
+
+    if 0 < employee_count <= 499:
+        await message.answer(
+            "Какой вариант КЭДО вам больше подходит:\n"
+            "\n"
+            "<b><u>HRlink Lite</u> - для простых кадровых процессов:</b>\n"
+            "- интеграции с «1С:ЗУП» и «1С:Фреш»;\n"
+            "- уведомления через Telegram или почту;\n"
+            "- облачное размещение;\n"
+            "- сопровождение через службу заботы.\n"
+            "\n"
+            "<b><u>HRlink Standard</u> - для кадровых процессов </b>"
+            "<b>с нетиповыми маршрутами</b> "
+            "<b>и большим количеством интеграций:</b>\n"
+            "- интеграции с «1С», «Битрикс24», «БОСС-Кадровик», SAP;\n"
+            "- уведомления через Telegram, почту и СМС;\n"
+            "- возможность доработок после внедрения;\n"
+            "- размещение на сервере;\n"
+            "- персональное сопровождение.\n"
+            "\n"
+            "<b>Используйте кнопки внизу сообщения.</b>",
+            reply_markup=get_license_type_keyboard(), parse_mode=ParseMode.HTML)
+        await state.set_state(Form.license_type)
+    elif 500 <= employee_count <= 1999:
+        await state.update_data(license_type="standard", employee_license_cost=700)
+        await message.answer(
+            "<b>Сколько кадровых специалистов в вашей компании?</b>",
+            parse_mode=ParseMode.HTML)
+        await state.set_state(Form.hr_specialist_count)
+    elif employee_count >= 2000:
+        await state.update_data(license_type="enterprise", employee_license_cost=600)
+        await message.answer(
+            "<b>Сколько кадровых специалистов в вашей компании?</b>",
+            parse_mode=ParseMode.HTML)
+        await state.set_state(Form.hr_specialist_count)
+    else:
+        await message.answer(
+            "Пожалуйста, введите корректное количество сотрудников.",
+            parse_mode=ParseMode.HTML)
+
+
 async def process_license_type(
         callback_query: CallbackQuery, state: FSMContext):
     license_type = "lite" if callback_query.data == "simple_kedo" else "standard"
     await state.update_data(license_type=license_type)
 
-    # Проверка количества сотрудников
-    data = await state.get_data()
-    employee_count = data.get("employee_count", 0)
-
     if license_type == "lite":
-        if 0 < employee_count < 500:
-            employee_license_cost = 500
-            tariff_name = "HRlink Lite"
-        elif 500 <= employee_count <= 1999:
-            employee_license_cost = 700
-            tariff_name = "HRlink Lite"
-        else:
-            employee_license_cost = 600
-            tariff_name = "HRlink Enterprise"
-    elif license_type == "standard":
-        if 0 < employee_count <= 1999:
-            employee_license_cost = 700
-            tariff_name = "HRlink Standard"
-        else:
-            employee_license_cost = 600
-            tariff_name = "HRlink Enterprise"
+        employee_license_cost = 500
+        tariff_name = "HRlink Lite"
     else:
         employee_license_cost = 700
-        tariff_name = "HRlink Standard"  # По умолчанию
+        tariff_name = "HRlink Standard"
 
     await state.update_data(employee_license_cost=employee_license_cost)
-    await state.update_data(tariff_name=tariff_name)  # Сохраняем название тарифа
+    await state.update_data(tariff_name=tariff_name)
 
     await callback_query.message.answer(
-        "Сколько в среднем документов подписывает сотрудник за год?\n"
-        "Обычно это около 30 документов.\n"
-        "Укажите число, актуальное для вашей компании.",
+        "<b>Сколько кадровых специалистов в вашей компании?</b>",
         parse_mode=ParseMode.HTML)
-    await state.set_state(Form.documents_per_employee)
-    await state.update_data(user_id=callback_query.from_user.id)
+    await state.set_state(Form.hr_specialist_count)
 
 
 async def process_hr_specialist_count(message: Message, state: FSMContext):
@@ -168,41 +196,11 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
         return
     await state.update_data(hr_specialist_count=int(message.text))
     await message.answer(
-        "Какой вариант КЭДО вам больше подходит:\n"
-        "\n"
-        "<b><u>HRlink Lite</u> - для простых кадровых процессов:</b>\n"
-        "- интеграции с «1С:ЗУП» и «1С:Фреш»;\n"
-        "- уведомления через Telegram или почту;\n"
-        "- облачное размещение;\n"
-        "- сопровождение через службу заботы.\n"
-        "\n"
-        "<b><u>HRlink Standard</u> - для кадровых процессов </b>"
-        "<b>с нетиповыми маршрутами</b> "
-        "<b>и большим количеством интеграций:</b>\n"
-        "- интеграции с «1С», «Битрикс24», «БОСС-Кадровик», SAP;\n"
-        "- уведомления через Telegram, почту и СМС;\n"
-        "- возможность доработок после внедрения;\n"
-        "- размещение на сервере;\n"
-        "- персональное сопровождение.\n"
-        "\n"
-        "<b>Используйте кнопки внизу сообщения.</b>",
-        reply_markup=get_license_type_keyboard(), parse_mode=ParseMode.HTML)
-    await state.set_state(Form.license_type)
-    await state.update_data(user_id=message.from_user.id)
-
-
-async def process_employee_count(message: Message, state: FSMContext):
-    if not message.text.isdigit():
-        await message.answer(
-            "Пожалуйста, введите <b>целое число.</b>",
-            parse_mode=ParseMode.HTML)
-        return
-    await state.update_data(employee_count=int(message.text))
-    await message.answer(
-        "<b>Сколько кадровых специалистов в вашей компании?</b>",
+        "Сколько в среднем документов подписывает сотрудник за год?\n"
+        "Обычно это около 30 документов.\n"
+        "Укажите число, актуальное для вашей компании.",
         parse_mode=ParseMode.HTML)
-    await state.set_state(Form.hr_specialist_count)
-    await state.update_data(user_id=message.from_user.id)
+    await state.set_state(Form.documents_per_employee)
 
 
 async def process_documents_per_employee(message: Message, state: FSMContext):
@@ -220,11 +218,10 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
     await message.answer(
         "Сколько в среднем страниц в каждом документе?\n"
         "Обычно это 1,5 страницы.  Укажите число, "
-        "актуальное для вашей компании:",
+        "актуальное для вашей компании.",
         parse_mode=ParseMode.HTML
     )
     await state.set_state(Form.pages_per_document)
-    await state.update_data(user_id=message.from_user.id)
 
 
 async def process_pages_per_document(message: Message, state: FSMContext):
@@ -240,12 +237,11 @@ async def process_pages_per_document(message: Message, state: FSMContext):
 
     await state.update_data(pages_per_document=value)
     await message.answer(
-        "Какая в Вашей организации <b>текучка в процентах?</b>\n"
-        "Введите только целое число, знак <b>%</b> указывать не нужно.",
+        "Какой <b>процент текучки</b> в вашей организации?\n"
+        "Введите целое число, знак «%» указывать не нужно.",
         parse_mode=ParseMode.HTML
     )
     await state.set_state(Form.turnover_percentage)
-    await state.update_data(user_id=message.from_user.id)
 
 
 async def process_turnover_percentage(message: Message, state: FSMContext):
@@ -266,11 +262,10 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
         "с бумажными документами, и не будут переданы или "
         "использованы вне этого бота. Вы можете сократить "
         "это время и освободить специалистов для "
-        "выполнения других задач."
+        "выполнения других задач.\n"
         "В ответе укажите целое число",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.average_salary)
-    await state.update_data(user_id=message.from_user.id)
 
 
 async def process_average_salary(message: Message, state: FSMContext):
@@ -288,7 +283,6 @@ async def process_average_salary(message: Message, state: FSMContext):
         "Введите 0, если нет курьерских доставок",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.courier_delivery_cost)
-    await state.update_data(user_id=message.from_user.id)
 
 
 async def process_courier_delivery_cost(message: Message, state: FSMContext):
@@ -313,8 +307,6 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
         # Если стоимость доставки равна 0, пропускаем вопрос о проценте отправки
         await state.update_data(hr_delivery_percentage=0)  # Устанавливаем значение по умолчанию
         await save_data(message, state, bot)  # Сохраняем данные
-
-    await state.update_data(user_id=message.from_user.id)
 
 
 async def process_hr_delivery_percentage(message: Message, state: FSMContext):
@@ -391,7 +383,6 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
 
         # Вывод результатов
         results = (
-            f"<b>Тип лицензии:</b> <u>{data.get('tariff_name', 'standard')}</u>\n"  # Используем tariff_name
             f"<b>Число сотрудников:</b> {data['employee_count']}\n"
             f"<b>Число кадровых специалистов:</b> {data['hr_specialist_count']}\n"
             f"<b>Документов в год на сотрудника:</b> {
@@ -403,6 +394,8 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
                 data['courier_delivery_cost']} руб.\n"
             f"<b>Процент отправки кадровых документов:</b> {
                 data.get('hr_delivery_percentage', 0)}%\n"
+            "<b>Подходящий тариф:</b> "
+            f"<u>{data.get('tariff_name', 'standard')}</u>\n"
         )
         await message.answer(
             f"<b>Вы ввели следующие данные:</b>\n{results}",
@@ -417,69 +410,48 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
 
 async def contact_me(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.answer(
-        "<b>Укажите ИНН Вашей организации</b>",
-        parse_mode=ParseMode.HTML)
-    await state.set_state(Form.organization_inn)
-    await state.update_data(user_id=callback_query.from_user.id)
-
-
-async def process_organization_inn(message: Message, state: FSMContext):
-    inn = message.text.strip()
-
-    # Проверка INN
-    if not re.match(r'^\d{10}$|^\d{12}$', inn):
-        await message.answer(
-            "<b>Неверный формат ИНН.</b> Пожалуйста, "
-            "введите корректный ИНН (10 цифр для ООО или 12 цифр для ИП).",
-            parse_mode=ParseMode.HTML)
-        return
-
-    await state.update_data(organization_inn=inn)
-    await message.answer(
-        "<b>Укажите название вашей организации</b>",
-        parse_mode=ParseMode.HTML)
-    await state.set_state(Form.organization_name)
-    await state.update_data(user_id=message.from_user.id)
-
-
-async def process_organization_name(message: Message, state: FSMContext):
-    await state.update_data(organization_name=message.text)
-    await message.answer(
-        "<b>Как к вам обращаться?</b>",
+        "<b>Как вас зовут?</b>",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.contact_name)
-    await state.update_data(user_id=message.from_user.id)
+    await state.update_data(user_id=callback_query.from_user.id)
 
 
 async def process_contact_name(message: Message, state: FSMContext):
     await state.update_data(contact_name=message.text)
     await message.answer(
-        "<b>Укажите ваш номер телефона</b>",
+        "<b>Укажите номер телефона для связи</b>",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.contact_phone)
-    await state.update_data(user_id=message.from_user.id)
 
 
 async def process_contact_phone(message: Message, state: FSMContext):
     await state.update_data(contact_phone=message.text)
     await message.answer(
-        "<b>Укажите ваш email</b>",
+        "<b>Укажите электронную почту</b>",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.contact_email)
-    await state.update_data(user_id=message.from_user.id)
 
 
 async def process_contact_email(message: Message, state: FSMContext):
     await state.update_data(contact_email=message.text)
     await message.answer(
-        "<b>Какой канал связи предпочитаете? Почта, мессенджер, звонок.</b>",
+        "<b>Укажите название вашей компании</b>",
         parse_mode=ParseMode.HTML)
-    await state.set_state(Form.contact_preference)
-    await state.update_data(user_id=message.from_user.id)
+    await state.set_state(Form.organization_name)
 
 
 async def process_contact_preference(message: Message, state: FSMContext):
     await state.update_data(contact_preference=message.text)
+    await message.answer(
+        "<b>Спасибо, данные записали и передали менеджеру, "
+        "свяжемся с Вами в ближайшее время❤.</b>",
+        reply_markup=get_start_keyboard(), parse_mode=ParseMode.HTML)
+    await send_contact_data(state)
+    await state.clear()
+
+
+async def process_organization_name(message: Message, state: FSMContext):
+    await state.update_data(organization_name=message.text)
     await message.answer(
         "<b>Спасибо, данные записали и передали менеджеру, "
         "свяжемся с Вами в ближайшее время❤.</b>",
@@ -495,8 +467,7 @@ async def send_contact_data(state: FSMContext):
 
     # Проверяем, все ли данные заполнены
     required_fields = [
-        'contact_name', 'organization_inn', 'contact_phone',
-        'contact_email', 'contact_preference', 'organization_name'
+        'contact_name', 'contact_phone', 'contact_email', 'organization_name'
     ]
     missing_fields = [field for field in required_fields if field not in data]
 
@@ -553,12 +524,10 @@ async def send_contact_data(state: FSMContext):
     # Формирование первого сообщения с контактной информацией
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
-        f"<b>ИНН организации:</b> <code>{data['organization_inn']}</code>\n"
-        f"<b>Название организации:</b> {data['organization_name']}\n"
         f"<b>Имя:</b> {data['contact_name']}\n"
         f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
-        f"<b>Предпочтительный канал связи:</b> {data['contact_preference']}\n"
+        f"<b>Название компании:</b> {data['organization_name']}\n"
         f"<b>Тип лицензии:</b> <u>{data.get('tariff_name', 'HRlink Standard')}</u>\n"  # Используем tariff_name
     )
 
@@ -599,43 +568,51 @@ async def confirm_data(message: Message, state: FSMContext):
     total_license_costs = calculate_total_license_costs(data, license_costs)
 
     # Вывод результатов
-    user_text = (
+    user_text1 = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
-        f"<b>Итого расходы при КДП на бумаге: {
+        f"<b>Ваши расходы на бумажное КДП: {
             format_number(
                 total_paper_costs + total_logistics_costs +
                 total_operations_costs
                 )
                 }</b> руб.\n"
         "\n"
-        f"Распечатывание, хранение документов: <b>{
+        f"Печать и хранение кадровых документов: <b>{
             format_number(total_paper_costs)}</b> руб.\n"
-        f"Расходы на доставку документов: <b>{
+        f"Доставка кадровых документов: <b>{
             format_number(total_logistics_costs)}</b> руб.\n"
-        f"Расходы на оплату времени по работе с документами: <b>{
+        "Оплата времени кадрового специалиста, "
+        f"которое он тратит на работу с документами: <b>{
             format_number(total_operations_costs)}</b> руб.\n"
         "\n"
-        f"<u><b>Сумма КЭДО HRlink от: {format_number(total_license_costs)}</b></u> руб. \n"
-        "В эту сумму входит: \n"
-        "<b>Базовая лицензия</b> (рабочее пространство) \n"
-        "<b>Лицензия Кадрового специалиста(ов)</b> \n"
-        "<b>Лицензии для сотрудников</b> (С возможностью "
-        "выпустить <b>УНЭП</b>, так же в лицензию входит <b>5 СМС</b>)\n"
-        "\n"
-        "<u><i>Стоимость решения КЭДО от HRlink в месяц от:</i></u> "
-        f"<b>{format_number(total_license_costs / 12)}</b>руб.\n"
-        "\n"
-        f"Сумма выгоды: <b>{
+        )
+
+    user_text2 = (
+        f"Внедрив КЭДО от HRlink, вы сможете сэкономить <b>{
             format_number(
                 total_paper_costs + total_logistics_costs +
                 total_operations_costs - total_license_costs)}</b> руб. "
+        f"<u><b>Стоимость HRlink для вашей компании от - {
+            format_number(total_license_costs)}</b></u> руб. \n"
+        "<u><i>Стоимость решения КЭДО от HRlink в месяц от:</i></u> "
+        f"<b>{format_number(total_license_costs / 12)}</b>руб.\n"
+        "\n"
+        "Точная цена рассчитывается менеджером индивидуально для каждого клиента."
+        "\n"
+        "Вы получите:"
+
+        "— множество интеграций с учетными системами и не только;"
+        "— найм и работу с сотрудниками, самозанятыми и по ГПХ;"
+        "— легитимное подписание и хранение документов;"        "— удобный личный кабинет сотрудника;"
+        "— гибкие маршруты и процессы;"
+        "— все виды электронных подписей."
     )
 
     # Добавляем информацию о тарифе и цене лицензии
     tariff_name = data.get("tariff_name", "HRlink Standard")
     employee_license_cost = data.get("employee_license_cost", 700)
-    user_text += (
+    user_text2 += (
         f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
         f"<b>Цена лицензии сотрудника от:</b> {employee_license_cost} руб."
     )
@@ -651,14 +628,13 @@ async def confirm_data(message: Message, state: FSMContext):
     os.remove(graph_path)
 
     # Вывод основных выводов
-    await message.answer(user_text, parse_mode=ParseMode.HTML)
+    await message.answer(user_text1, parse_mode=ParseMode.HTML)
+    await message.answer(user_text2, parse_mode=ParseMode.HTML)
 
     await message.answer(
-        'Для того чтобы разработать детальное <b>ТЭО</b> '
-        '(Технико Экономическое Обоснование), '
-        'обсудить проект или задать свои вопросы, '
-        'нажмите кнопку ниже для связи с нами, заполните информацию и '
-        'мы обязательно свяжемся в Вами в ближайшее время.',
+        "Оставьте <b>заявку</b>, и мы расскажем о возможностях "
+        "КЭДО-платформы HRlink, поможем обосновать внедрение "
+        "перед руководителем и ответим на ваши вопросы.",
         reply_markup=get_contact_keyboard(),
         parse_mode=ParseMode.HTML
     )
