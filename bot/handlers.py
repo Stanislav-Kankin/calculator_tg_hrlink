@@ -104,7 +104,7 @@ async def start_form(callback_query: CallbackQuery, state: FSMContext):
 async def restart_form(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        "<b>Сколько кадровых специалистов в вашей компании?</b>",
+        "<b>Сколько сотрудников работает в вашей компании?</b>",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.employee_count)
     await state.update_data(user_id=message.from_user.id)
@@ -198,7 +198,7 @@ async def process_employee_count(message: Message, state: FSMContext):
         return
     await state.update_data(employee_count=int(message.text))
     await message.answer(
-        "Введите число <b>кадровых специалистов.</b>",
+        "<b>Сколько кадровых специалистов в вашей компании?</b>",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.hr_specialist_count)
     await state.update_data(user_id=message.from_user.id)
