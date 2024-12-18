@@ -449,7 +449,9 @@ async def process_contact_preference(message: Message, state: FSMContext):
     await message.answer(
         "Спасибо, передали информацию менеджеру, "
         "свяжемся с вами в ближайшее время 💙",
-        reply_markup=get_retry_keyboard(), parse_mode=ParseMode.HTML)
+        reply_markup=get_retry_keyboard(),
+        parse_mode=ParseMode.HTML
+    )
     await send_contact_data(state)
     await state.clear()
 
