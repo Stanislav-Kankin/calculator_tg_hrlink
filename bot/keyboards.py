@@ -37,7 +37,7 @@ def get_license_type_keyboard():
             text="HRlink Lite 👍", callback_data="simple_kedo"
             )],
         [InlineKeyboardButton(
-            text="HRlink Standard 😎", callback_data="standard_kedo"
+            text="HRlink Standart 😎", callback_data="standard_kedo"
             )]
     ])
     return keyboard
