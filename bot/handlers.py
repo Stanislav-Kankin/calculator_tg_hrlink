@@ -95,7 +95,7 @@ async def cmd_start(message: Message):
 
 async def start_form(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.answer(
-        "<b>Введите число сотрудников.</b>",
+        "<b>Сколько сотрудников работает в вашей компании?</b>",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.employee_count)
     await state.update_data(user_id=callback_query.from_user.id)
@@ -104,7 +104,7 @@ async def start_form(callback_query: CallbackQuery, state: FSMContext):
 async def restart_form(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
-        "<b>Введите число сотрудников.</b>",
+        "<b>Сколько кадровых специалистов в вашей компании?</b>",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.employee_count)
     await state.update_data(user_id=message.from_user.id)
@@ -152,8 +152,9 @@ async def process_license_type(
     await state.update_data(tariff_name=tariff_name)  # Сохраняем название тарифа
 
     await callback_query.message.answer(
-        "Сколько в среднем один сотрудник подписывает документов в год?\n"
-        "Обычно это 28 - 40 документов, укажите конкретно по Вашей организации.",
+        "Сколько в среднем документов подписывает сотрудник за год?\n"
+        "Обычно это около 30 документов.\n"
+        "Укажите число, актуальное для вашей компании.",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.documents_per_employee)
     await state.update_data(user_id=callback_query.from_user.id)
@@ -217,8 +218,9 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
 
     await state.update_data(documents_per_employee=int(value))
     await message.answer(
-        "Сколько в среднем страниц в документе?\n"
-        "Обычно это 1,5 страницы, введите Ваше значение:",
+        "Сколько в среднем страниц в каждом документе?\n"
+        "Обычно это 1,5 страницы.  Укажите число, "
+        "актуальное для вашей компании:",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
     )
     await state.set_state(Form.pages_per_document)
@@ -256,12 +258,16 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
         return
     await state.update_data(turnover_percentage=value)
     await message.answer(
-        "Какая средняя заработная плата сотрудников одела кадров "
-        "с учетом НДФЛ и налогов в месяц (руб.)?\n"
-        "Этот вопрос имеет значение <b>для точного расчёта времени,</b> "
-        "которое сотрудники ОК тратят на работу с бумажными документами, "
-        "вместо выполнения своих основных обязанностей. Эти <b>траты</b> "
-        "<b>можно сократить</b>, перейдя на КЭДО.",
+        "Какая средняя ежемесячная зарплата сотрудников "
+        "отдела кадров с учетом налогов?\n"
+        "\n"
+        "Данные нужны <b>для точного расчета времени</b>, "
+        "которое сотрудники отдела кадров тратят на работу "
+        "с бумажными документами, и не будут переданы или "
+        "использованы вне этого бота. Вы можете сократить "
+        "это время и освободить специалистов для "
+        "выполнения других задач."
+        "В ответе укажите целое число",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.average_salary)
     await state.update_data(user_id=message.from_user.id)
@@ -277,8 +283,9 @@ async def process_average_salary(message: Message, state: FSMContext):
         return
     await state.update_data(average_salary=value)
     await message.answer(
-        "Сколько стоит одна курьерская доставка документов? \n"
-        "Укажите 0 если нет курьерских доставок.",
+        "Сколько в среднем стоит одна курьерская "
+        "доставка документов?\n"
+        "Введите 0, если нет курьерских доставок",
         reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
     await state.set_state(Form.courier_delivery_cost)
     await state.update_data(user_id=message.from_user.id)
@@ -297,8 +304,9 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
 
     if value > 0:
         await message.answer(
-            "Какой % от общего числа доставок занимает "
-            "именно отправка кадровых документов курьером?",
+            "Какой процент от общего числа "
+            "курьерских доставок занимает отправка кадровых документов?\n"
+            "Введите целое число, знак «%» указывать не нужно.",
             reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_delivery_percentage)
     else:
