@@ -82,11 +82,11 @@ async def cmd_start(message: Message):
             logging.error(f"Ошибка при отправке уведомления: {e}")
 
     user_text = (
-        'Здравствуйте.\n'
-        'Это бот для расчёта <b>выгоды перехода на КЭДО</b> 💰\n'
-        'Вам будет задано несколько вопросов по текущим процессам КДП. 👀\n'
-        'А бот наглядно покажет разницу между бумагой и КЭДО \n'
-        'Как будете готовы, нажмите кнопку <b>"Приступисть к расчётам"</b>. 👇'
+        "Здравствуйте!\n"
+        "Это бот для расчета финансовой выгоды перехода на КЭДО 💰\n"
+        "Ответьте на несколько вопросов о КДП в вашей компании, "
+        "и бот посчитает разницу между бумажным и "
+        "электронным кадровым документооборотом."
     )
     await message.answer(
         text=user_text, reply_markup=get_start_keyboard(),
@@ -96,7 +96,7 @@ async def cmd_start(message: Message):
 async def start_form(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.answer(
         "<b>Сколько сотрудников работает в вашей компании?</b>",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        parse_mode=ParseMode.HTML)
     await state.set_state(Form.employee_count)
     await state.update_data(user_id=callback_query.from_user.id)
 
@@ -105,7 +105,7 @@ async def restart_form(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         "<b>Сколько сотрудников работает в вашей компании?</b>",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        parse_mode=ParseMode.HTML)
     await state.set_state(Form.employee_count)
     await state.update_data(user_id=message.from_user.id)
 
@@ -155,7 +155,7 @@ async def process_license_type(
         "Сколько в среднем документов подписывает сотрудник за год?\n"
         "Обычно это около 30 документов.\n"
         "Укажите число, актуальное для вашей компании.",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        parse_mode=ParseMode.HTML)
     await state.set_state(Form.documents_per_employee)
     await state.update_data(user_id=callback_query.from_user.id)
 
@@ -164,7 +164,7 @@ async def process_hr_specialist_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
         await message.answer(
             "Пожалуйста, введите <b>целое число.</b>",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML)
         return
     await state.update_data(hr_specialist_count=int(message.text))
     await message.answer(
@@ -194,12 +194,12 @@ async def process_employee_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
         await message.answer(
             "Пожалуйста, введите <b>целое число.</b>",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML)
         return
     await state.update_data(employee_count=int(message.text))
     await message.answer(
         "<b>Сколько кадровых специалистов в вашей компании?</b>",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        parse_mode=ParseMode.HTML)
     await state.set_state(Form.hr_specialist_count)
     await state.update_data(user_id=message.from_user.id)
 
@@ -211,8 +211,7 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
             raise ValueError("Число должно быть положительным.")
     except ValueError:
         await message.answer(
-            "Пожалуйста, введите положительное число.",
-            reply_markup=get_keyboard()
+            "Пожалуйста, введите положительное число."
         )
         return
 
@@ -221,7 +220,7 @@ async def process_documents_per_employee(message: Message, state: FSMContext):
         "Сколько в среднем страниц в каждом документе?\n"
         "Обычно это 1,5 страницы.  Укажите число, "
         "актуальное для вашей компании:",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML
     )
     await state.set_state(Form.pages_per_document)
     await state.update_data(user_id=message.from_user.id)
@@ -234,7 +233,7 @@ async def process_pages_per_document(message: Message, state: FSMContext):
     except ValueError:
         await message.answer(
             "Пожалуйста, <b>введите число c точкой или запятой.</b>",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -242,7 +241,7 @@ async def process_pages_per_document(message: Message, state: FSMContext):
     await message.answer(
         "Какая в Вашей организации <b>текучка в процентах?</b>\n"
         "Введите только целое число, знак <b>%</b> указывать не нужно.",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML
     )
     await state.set_state(Form.turnover_percentage)
     await state.update_data(user_id=message.from_user.id)
@@ -254,7 +253,7 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
     except ValueError:
         await message.answer(
             "Пожалуйста, введите число.",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML)
         return
     await state.update_data(turnover_percentage=value)
     await message.answer(
@@ -268,7 +267,7 @@ async def process_turnover_percentage(message: Message, state: FSMContext):
         "это время и освободить специалистов для "
         "выполнения других задач."
         "В ответе укажите целое число",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        parse_mode=ParseMode.HTML)
     await state.set_state(Form.average_salary)
     await state.update_data(user_id=message.from_user.id)
 
@@ -279,14 +278,14 @@ async def process_average_salary(message: Message, state: FSMContext):
     except ValueError:
         await message.answer(
             "Пожалуйста, введите число.",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML)
         return
     await state.update_data(average_salary=value)
     await message.answer(
         "Сколько в среднем стоит одна курьерская "
         "доставка документов?\n"
         "Введите 0, если нет курьерских доставок",
-        reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+        parse_mode=ParseMode.HTML)
     await state.set_state(Form.courier_delivery_cost)
     await state.update_data(user_id=message.from_user.id)
 
@@ -297,7 +296,7 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
     except ValueError:
         await message.answer(
             "Пожалуйста, введите число.",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML)
         return
 
     await state.update_data(courier_delivery_cost=value)
@@ -307,7 +306,7 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
             "Какой процент от общего числа "
             "курьерских доставок занимает отправка кадровых документов?\n"
             "Введите целое число, знак «%» указывать не нужно.",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_delivery_percentage)
     else:
         # Если стоимость доставки равна 0, пропускаем вопрос о проценте отправки
@@ -323,7 +322,7 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
     except ValueError:
         await message.answer(
             "Пожалуйста, введите число.",
-            reply_markup=get_keyboard(), parse_mode=ParseMode.HTML)
+            parse_mode=ParseMode.HTML)
         return
     await state.update_data(hr_delivery_percentage=value)
     await state.update_data(user_id=message.from_user.id)
