@@ -582,15 +582,15 @@ async def confirm_data(message: Message, state: FSMContext):
                 total_paper_costs + total_logistics_costs +
                 total_operations_costs
                 )
-                }</b> руб.\n"
+                }</b> рублей в год\n"
         "\n"
         f"Печать и хранение кадровых документов: <b>{
-            format_number(total_paper_costs)}</b> руб.\n"
+            format_number(total_paper_costs)}</b> рублей в год\n"
         f"Доставка кадровых документов: <b>{
-            format_number(total_logistics_costs)}</b> руб.\n"
+            format_number(total_logistics_costs)}</b> рублей в год\n"
         "Оплата времени кадрового специалиста, "
         f"которое он тратит на работу с документами: <b>{
-            format_number(total_operations_costs)}</b> руб.\n"
+            format_number(total_operations_costs)}</b> рублей в год\n"
         "\n"
         )
 
@@ -600,9 +600,9 @@ async def confirm_data(message: Message, state: FSMContext):
                 total_paper_costs + total_logistics_costs +
                 total_operations_costs - total_license_costs)}</b> руб. "
         f"<b>Стоимость HRlink для вашей компании от: {
-            format_number(total_license_costs)}</b> руб. в год. \n"
+            format_number(total_license_costs)}</b> рублей в год. \n"
         "<u><i>Стоимость решения КЭДО от HRlink в месяц от:</i></u> "
-        f"<b>{format_number(total_license_costs / 12)}</b>руб.\n"
+        f"<b>{format_number(total_license_costs / 12)}</b> руб.\n"
         "\n"
         "Точная цена рассчитывается менеджером индивидуально для каждого клиента."
         "\n"
@@ -621,7 +621,7 @@ async def confirm_data(message: Message, state: FSMContext):
     employee_license_cost = data.get("employee_license_cost", 700)
     user_text2 += (
         f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
-        f"<b>Цена лицензии сотрудника от:</b> {employee_license_cost} руб. в год"
+        f"<b>Цена лицензии сотрудника от:</b> {employee_license_cost} рублей в год"
     )
 
     # Генерация и отправка графика
