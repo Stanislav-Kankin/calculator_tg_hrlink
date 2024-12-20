@@ -22,8 +22,10 @@ from calculations import (
 from decouple import Config, RepositoryEnv
 from graph import generate_cost_graph
 import os
-import logging
+import aiohttp
+import json
 import re
+from datetime import datetime
 
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
@@ -308,8 +310,8 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
             parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_delivery_percentage)
     else:
-        # Если стоимость доставки равна 0, пропускаем вопрос о проценте отправки
-        await state.update_data(hr_delivery_percentage=0)  # Устанавливаем значение по умолчанию
+        # Если доставка равна 0, пропускаем вопрос о проценте
+        await state.update_data(hr_delivery_percentage=0)
         await save_data(message, state, bot)  # Сохраняем данные
 
 
@@ -347,15 +349,15 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
 
     user_data = UserData(
         user_id=message.from_user.id,
-        organization_name=organization_name,  # Используем значение по умолчанию
-        employee_count=data['employee_count'],
-        hr_specialist_count=data['hr_specialist_count'],
+        organization_name=organization_name,
+        employee_count=data.get('employee_count', None),
+        hr_specialist_count=data.get('hr_specialist_count', None),
         license_type=data.get('license_type', 'standard'),
-        documents_per_employee=data['documents_per_employee'],
-        pages_per_document=data['pages_per_document'],
-        turnover_percentage=data['turnover_percentage'],
-        average_salary=data['average_salary'],
-        courier_delivery_cost=data['courier_delivery_cost'],
+        documents_per_employee=data.get('documents_per_employee', None),
+        pages_per_document=data.get('pages_per_document', None),
+        turnover_percentage=data.get('turnover_percentage', None),
+        average_salary=data.get('average_salary', None),
+        courier_delivery_cost=data.get('courier_delivery_cost', None),
         hr_delivery_percentage=data.get('hr_delivery_percentage', 0)
     )
 
@@ -376,7 +378,8 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
 
         # Расчет суммы по использованию нашего решения
         license_costs = session.query(LicenseCosts).first()
-        total_license_costs = calculate_total_license_costs(data, license_costs)
+        total_license_costs = calculate_total_license_costs(
+            data, license_costs)
 
         # Сохранение результатов расчетов в базе данных
         user_data.total_paper_costs = total_paper_costs
@@ -385,19 +388,28 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
         user_data.total_license_costs = total_license_costs
         session.commit()
 
+        # Добавляем результаты расчетов в data
+        data['total_paper_costs'] = total_paper_costs
+        data['total_logistics_costs'] = total_logistics_costs
+        data['total_operations_costs'] = total_operations_costs
+        data['total_license_costs'] = total_license_costs
+        data['timestamp'] = datetime.now()  # Добавляем текущее время
+
         # Вывод результатов
         results = (
-            f"<b>Число сотрудников:</b> {data['employee_count']}\n"
-            f"<b>Число кадровых специалистов:</b> {data['hr_specialist_count']}\n"
+            f"<b>Число сотрудников:</b> {data.get('employee_count', 'Не указано')}\n"
+            f"<b>Число кадровых специалистов:</b> {
+                data.get('hr_specialist_count', 'Не указано')
+                }\n"
             f"<b>Документов в год на сотрудника:</b> {
-                data['documents_per_employee']}\n"
-            f"<b>Страниц в документе:</b> {data['pages_per_document']}\n"
-            f"<b>Текучка в процентах:</b> {data['turnover_percentage']}%\n"
-            f"<b>Средняя зарплата:</b> {data['average_salary']} руб.\n"
+                data.get('documents_per_employee', 'Не указано')}\n"
+            f"<b>Страниц в документе:</b> {data.get('pages_per_document', 'Не указано')}\n"
+            f"<b>Текучка в процентах:</b> {data.get('turnover_percentage', 'Не указано')}%\n"
+            f"<b>Средняя зарплата:</b> {data.get('average_salary', 'Не указано')} руб.\n"
             f"<b>Стоимость курьерской доставки:</b> {
-                data['courier_delivery_cost']} руб.\n"
+                data.get('courier_delivery_cost', 'Не указано')} руб.\n"
             f"<b>Процент отправки кадровых документов:</b> {
-                data.get('hr_delivery_percentage', 0)}%\n"
+                data.get('hr_delivery_percentage', 'Не указано')}%\n"
             "<b>Подходящий тариф:</b> "
             f"<u>{get_tariff_name(data)}</u>\n"
         )
@@ -405,6 +417,9 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
             f"<b>Вы ввели следующие данные:</b>\n{results}",
             reply_markup=get_confirmation_keyboard(),
             parse_mode=ParseMode.HTML)
+
+        # Передаем данные в функцию создания лида
+        await create_bitrix_lead(data)
     else:
         # Если данные ещё не полные, просто сохраняем их
         session.commit()
@@ -482,12 +497,16 @@ async def send_contact_data(state: FSMContext):
         missing_fields_text = ", ".join(missing_fields)
         await bot.send_message(
             chat_id=data['user_id'],
-            text=f"<b>Не заполнены следующие поля:</b> {missing_fields_text}.\n"
+            text=f"<b>Не заполнены следующие поля:</b> "
+                 f"{missing_fields_text}.\n"
                  "Пожалуйста, заполните все поля, чтобы "
                  "оставить заявку на обратный звонок.",
             parse_mode=ParseMode.HTML
         )
         return
+
+    # Создаем лид в Битрикс24
+    await create_bitrix_lead(data)
 
     # Получение данных из базы данных
     session = Session()
@@ -604,7 +623,8 @@ async def confirm_data(message: Message, state: FSMContext):
         "<u><i>Стоимость решения КЭДО от HRlink в месяц от:</i></u> "
         f"<b>{format_number(total_license_costs / 12)}</b> руб.\n"
         "\n"
-        "Точная цена рассчитывается менеджером индивидуально для каждого клиента."
+        "Точная цена рассчитывается менеджером "
+        "индивидуально для каждого клиента."
         "\n"
         "Вы получите:\n"
         "\n"
@@ -621,7 +641,8 @@ async def confirm_data(message: Message, state: FSMContext):
     employee_license_cost = data.get("employee_license_cost", 700)
     user_text2 += (
         f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
-        f"<b>Цена лицензии сотрудника от:</b> {employee_license_cost} рублей в год"
+        "<b>Цена лицензии сотрудника от:</b> "
+        f"<u>{employee_license_cost} рублей в год</u>"
     )
 
     # Генерация и отправка графика
@@ -661,17 +682,86 @@ async def echo(message: Message):
         parse_mode=ParseMode.HTML)
 
 
-async def send_new_user_notification(user_id: int, username: str):
-    notification_text = (
-        f"Новый пользователь начал пользоваться ботом:\n"
-        f"ID: {user_id}\n"
-        f"Username: {username}"
+async def create_bitrix_lead(data):
+    bitrix_webhook_url = (
+        "https://b24.hrlk.ru/rest/7414/d6bo0kujd1cm2owi/crm.lead.add.json"
     )
-    await bot.send_message(chat_id=CHAT_ID, text=notification_text)
+
+    # Проверка email
+    email = data.get("contact_email", "").strip()
+    if not is_valid_email(email):
+        email = ""  # Если email невалидный, передаем пустое значение
+
+    # Формирование комментария
+    comments = (
+        f"Название организации: {data.get('organization_name', 'Не указано')}\n"
+        f"Тариф: {get_tariff_name(data)}\n"
+        f"Число сотрудников: {data.get('employee_count', 'Не указано')}\n"
+        f"Число кадровых специалистов: {data.get('hr_specialist_count', 'Не указано')}\n"
+        f"Документов в год на сотрудника: {data.get('documents_per_employee', 'Не указано')}\n"
+        f"Страниц в документе: {data.get('pages_per_document', 'Не указано')}\n"
+        f"Текучка в процентах: {data.get('turnover_percentage', 'Не указано')}%\n"
+        f"Средняя зарплата: {data.get('average_salary', 'Не указано')} руб.\n"
+        f"Стоимость курьерской доставки: {data.get('courier_delivery_cost', 'Не указано')} руб.\n"
+        f"Процент отправки кадровых документов: {data.get('hr_delivery_percentage', 'Не указано')}%\n"
+    )
+
+    # Добавление результатов расчетов
+    if 'total_paper_costs' in data and 'total_license_costs' in data:
+        comments += (
+            f"Сумма текущих трат на КДП на бумаге: {format_number(data['total_paper_costs'])} руб.\n"
+            f"Сумма КЭДО от HRlink: {format_number(data['total_license_costs'])} руб.\n"
+        )
+
+    # Добавление времени расчета
+    if 'timestamp' in data:
+        comments += f"Время расчета: {data['timestamp']}\n"
+
+    # Добавление информации об источнике
+    lead_data = {
+        "fields": {
+            "TITLE": "Заявка от Telegram-бота",
+            "NAME": data.get("contact_name", "Не указано"),
+            "PHONE": [{"VALUE": data.get("contact_phone", "Не указано"), "VALUE_TYPE": "WORK"}],
+            "EMAIL": [{"VALUE": email, "VALUE_TYPE": "WORK"}] if email else [],  # Передаем email, только если он валидный
+            "COMMENTS": comments,
+            "SOURCE_ID": "20",  # Источник: Телеграм-бот
+            "SOURCE_DESCRIPTION": "Бот Калькулятор"  # Дополнительно об источнике
+        }
+    }
+
+    # Логирование данных
+    print("Отправляемые данные в Битрикс24:")
+    print(json.dumps(lead_data, indent=2, ensure_ascii=False))
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(bitrix_webhook_url, json=lead_data) as response:
+                if response.status == 200:
+                    response_data = await response.json()
+                    if response_data.get("result"):
+                        print("Лид успешно создан в Битрикс24")
+                    else:
+                        print(f"Ошибка при создании лида: {response_data.get('error_description')}")
+                else:
+                    print(f"Ошибка HTTP: {response.status}")
+                    print(f"Ответ сервера: {await response.text()}")
+    except Exception as e:
+        print(f"Ошибка при отправке запроса в Битрикс24: {e}")
 
 
 def format_number(value):
     return "{:,.0f}".format(value).replace(',', ' ')
+
+
+def is_valid_email(email):
+    """
+    Проверяет, является ли email валидным.
+    """
+    if not email:
+        return False
+    email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    return re.match(email_regex, email) is not None
 
 
 def get_tariff_name(data):
