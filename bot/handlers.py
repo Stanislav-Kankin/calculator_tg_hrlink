@@ -743,8 +743,8 @@ async def create_bitrix_lead(data):
     }
 
     # Логирование данных
-    print("Отправляемые данные в Битрикс24:")
-    print(json.dumps(lead_data, indent=2, ensure_ascii=False))
+    # print("Отправляемые данные в Битрикс24:")
+    # print(json.dumps(lead_data, indent=2, ensure_ascii=False))
 
     try:
         async with aiohttp.ClientSession() as session:
