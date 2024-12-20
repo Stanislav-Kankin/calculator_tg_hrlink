@@ -702,17 +702,27 @@ async def create_bitrix_lead(data):
     if user_data_entries:
         latest_entry = user_data_entries[0]  # Берем последнюю запись
         comments = (
-            f"Название организации: {data.get('organization_name', 'Не указано')}\n"
+            f"Название организации: {data.get(
+                'organization_name', 'Не указано')}\n"
             f"Тариф: {get_tariff_name(data)}\n"
             f"Число сотрудников: {latest_entry.employee_count}\n"
-            f"Число кадровых специалистов: {latest_entry.hr_specialist_count}\n"
-            f"Документов в год на сотрудника: {latest_entry.documents_per_employee}\n"
+            f"Число кадровых специалистов: {
+                latest_entry.hr_specialist_count}\n"
+            f"Документов в год на сотрудника: {
+                latest_entry.documents_per_employee}\n"
             f"Страниц в документе: {latest_entry.pages_per_document}\n"
             f"Текучка в процентах: {latest_entry.turnover_percentage}%\n"
             f"Средняя зарплата: {latest_entry.average_salary} руб.\n"
-            f"Стоимость курьерской доставки: {latest_entry.courier_delivery_cost} руб.\n"
-            f"Процент отправки кадровых документов: {latest_entry.hr_delivery_percentage}%\n"
-            f"Сумма текущих трат на КДП на бумаге: {format_number(latest_entry.total_paper_costs + latest_entry.total_logistics_costs + latest_entry.total_operations_costs) if latest_entry.total_paper_costs is not None and latest_entry.total_logistics_costs is not None and latest_entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
+            f"Стоимость курьерской доставки: {
+                latest_entry.courier_delivery_cost} руб.\n"
+            f"Процент отправки кадровых документов: {
+                latest_entry.hr_delivery_percentage}%\n"
+            f"Сумма текущих трат на КДП на бумаге: {
+                format_number(
+                    latest_entry.total_paper_costs +
+                    latest_entry.total_logistics_costs +
+                    latest_entry.total_operations_costs
+                    ) if latest_entry.total_paper_costs is not None and latest_entry.total_logistics_costs is not None and latest_entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
             f"Сумма КЭДО от HRlink: {format_number(latest_entry.total_license_costs) if latest_entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
             f"Время расчета: {latest_entry.timestamp}\n"
         )
@@ -744,7 +754,11 @@ async def create_bitrix_lead(data):
                     if response_data.get("result"):
                         print("Лид успешно создан в Битрикс24")
                     else:
-                        print(f"Ошибка при создании лида: {response_data.get('error_description')}")
+                        print(
+                            f"Ошибка при создании лида: {
+                                response_data.get('error_description')
+                                }"
+                                )
                 else:
                     print(f"Ошибка HTTP: {response.status}")
                     print(f"Ответ сервера: {await response.text()}")
