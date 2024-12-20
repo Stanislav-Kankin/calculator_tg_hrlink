@@ -419,7 +419,6 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
             parse_mode=ParseMode.HTML)
 
         # Передаем данные в функцию создания лида
-        await create_bitrix_lead(data)
     else:
         # Если данные ещё не полные, просто сохраняем их
         session.commit()
@@ -483,6 +482,8 @@ async def process_organization_name(message: Message, state: FSMContext):
 
 async def send_contact_data(state: FSMContext):
     data = await state.get_data()
+    print(f"Извлеченные данные из FSMContext: {data}")  # Логирование
+
     if 'user_id' not in data:
         raise KeyError("user_id is missing in state data")
 
@@ -504,9 +505,6 @@ async def send_contact_data(state: FSMContext):
             parse_mode=ParseMode.HTML
         )
         return
-
-    # Создаем лид в Битрикс24
-    await create_bitrix_lead(data)
 
     # Получение данных из базы данных
     session = Session()
@@ -550,11 +548,13 @@ async def send_contact_data(state: FSMContext):
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
         f"<b>Имя:</b> {data['contact_name']}\n"
-        f"<b>Телефон:</b> <code>+{data['contact_phone']}</code>\n"
+        f"<b>Телефон:</b> <code>{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
         f"<b>Название компании:</b> {data['organization_name']}\n"
         f"<b>Тип лицензии:</b> <u>{get_tariff_name(data)}</u>\n"
     )
+
+    await create_bitrix_lead(data)
 
     # Отправка сообщений
     await bot.send_message(
@@ -692,32 +692,34 @@ async def create_bitrix_lead(data):
     if not is_valid_email(email):
         email = ""  # Если email невалидный, передаем пустое значение
 
-    # Формирование комментария
-    comments = (
-        f"Название организации: {data.get('organization_name', 'Не указано')}\n"
-        f"Тариф: {get_tariff_name(data)}\n"
-        f"Число сотрудников: {data.get('employee_count', 'Не указано')}\n"
-        f"Число кадровых специалистов: {data.get('hr_specialist_count', 'Не указано')}\n"
-        f"Документов в год на сотрудника: {data.get('documents_per_employee', 'Не указано')}\n"
-        f"Страниц в документе: {data.get('pages_per_document', 'Не указано')}\n"
-        f"Текучка в процентах: {data.get('turnover_percentage', 'Не указано')}%\n"
-        f"Средняя зарплата: {data.get('average_salary', 'Не указано')} руб.\n"
-        f"Стоимость курьерской доставки: {data.get('courier_delivery_cost', 'Не указано')} руб.\n"
-        f"Процент отправки кадровых документов: {data.get('hr_delivery_percentage', 'Не указано')}%\n"
-    )
+    # Получение данных из базы данных
+    session = Session()
+    user_data_entries = session.query(UserData).filter_by(
+        user_id=data['user_id']).order_by(UserData.timestamp.desc()).all()
+    session.close()
 
-    # Добавление результатов расчетов
-    if 'total_paper_costs' in data and 'total_license_costs' in data:
-        comments += (
-            f"Сумма текущих трат на КДП на бумаге: {format_number(data['total_paper_costs'])} руб.\n"
-            f"Сумма КЭДО от HRlink: {format_number(data['total_license_costs'])} руб.\n"
+    # Формирование сообщения с данными из базы данных
+    if user_data_entries:
+        latest_entry = user_data_entries[0]  # Берем последнюю запись
+        comments = (
+            f"Название организации: {data.get('organization_name', 'Не указано')}\n"
+            f"Тариф: {get_tariff_name(data)}\n"
+            f"Число сотрудников: {latest_entry.employee_count}\n"
+            f"Число кадровых специалистов: {latest_entry.hr_specialist_count}\n"
+            f"Документов в год на сотрудника: {latest_entry.documents_per_employee}\n"
+            f"Страниц в документе: {latest_entry.pages_per_document}\n"
+            f"Текучка в процентах: {latest_entry.turnover_percentage}%\n"
+            f"Средняя зарплата: {latest_entry.average_salary} руб.\n"
+            f"Стоимость курьерской доставки: {latest_entry.courier_delivery_cost} руб.\n"
+            f"Процент отправки кадровых документов: {latest_entry.hr_delivery_percentage}%\n"
+            f"Сумма текущих трат на КДП на бумаге: {format_number(latest_entry.total_paper_costs + latest_entry.total_logistics_costs + latest_entry.total_operations_costs) if latest_entry.total_paper_costs is not None and latest_entry.total_logistics_costs is not None and latest_entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
+            f"Сумма КЭДО от HRlink: {format_number(latest_entry.total_license_costs) if latest_entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
+            f"Время расчета: {latest_entry.timestamp}\n"
         )
+    else:
+        comments = "<b>Данные о расчетах отсутствуют.</b>"
 
-    # Добавление времени расчета
-    if 'timestamp' in data:
-        comments += f"Время расчета: {data['timestamp']}\n"
-
-    # Добавление информации об источнике
+    # Формирование данных для лида
     lead_data = {
         "fields": {
             "TITLE": "Заявка от Telegram-бота",
