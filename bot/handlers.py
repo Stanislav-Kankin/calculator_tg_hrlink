@@ -732,13 +732,13 @@ async def create_bitrix_lead(data):
     # Формирование данных для лида
     lead_data = {
         "fields": {
-            "TITLE": "Лид с калькулятора в боте",
+            "TITLE": "Заявка от Telegram-бота",
             "NAME": data.get("contact_name", "Не указано"),
             "PHONE": [{"VALUE": data.get("contact_phone", "Не указано"), "VALUE_TYPE": "WORK"}],
             "EMAIL": [{"VALUE": email, "VALUE_TYPE": "WORK"}] if email else [],  # Передаем email, только если он валидный
             "COMMENTS": comments,
             "SOURCE_ID": "20",  # Источник: Телеграм-бот
-            "SOURCE_DESCRIPTION": "Телеграм-бот / продукт"  # Дополнительно об источнике
+            "SOURCE_DESCRIPTION": "Бот Калькулятор"  # Дополнительно об источнике
         }
     }
 
