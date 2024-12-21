@@ -617,10 +617,10 @@ async def confirm_data(message: Message, state: FSMContext):
         f"Внедрив КЭДО от HRlink, вы сможете сэкономить <b>{
             format_number(
                 total_paper_costs + total_logistics_costs +
-                total_operations_costs - total_license_costs)}</b> руб. "
+                total_operations_costs - total_license_costs)}</b> рублей в год \n"
         f"<b>Стоимость HRlink для вашей компании от: {
             format_number(total_license_costs)}</b> рублей в год. \n"
-        "<u><i>Стоимость решения КЭДО от HRlink в месяц от:</i></u> "
+        "<u><i>Стоимость решения КЭДО от HRlink в месяц от: </i></u> "
         f"<b>{format_number(total_license_costs / 12)}</b> руб.\n"
         "\n"
         "Точная цена рассчитывается менеджером "
@@ -732,13 +732,13 @@ async def create_bitrix_lead(data):
     # Формирование данных для лида
     lead_data = {
         "fields": {
-            "TITLE": "Заявка от Telegram-бота",
+            "TITLE": "Лид с калькулятора в боте",
             "NAME": data.get("contact_name", "Не указано"),
             "PHONE": [{"VALUE": data.get("contact_phone", "Не указано"), "VALUE_TYPE": "WORK"}],
             "EMAIL": [{"VALUE": email, "VALUE_TYPE": "WORK"}] if email else [],  # Передаем email, только если он валидный
             "COMMENTS": comments,
             "SOURCE_ID": "20",  # Источник: Телеграм-бот
-            "SOURCE_DESCRIPTION": "Бот Калькулятор"  # Дополнительно об источнике
+            "SOURCE_DESCRIPTION": "Телеграм-бот / продукт"  # Дополнительно об источнике
         }
     }
 
