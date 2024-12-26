@@ -26,6 +26,7 @@ import aiohttp
 import json
 import re
 from datetime import datetime
+import logging
 
 config = Config(RepositoryEnv('.env'))
 BOT_TOKEN = config('BOT_TOKEN')
