@@ -9,8 +9,8 @@ from sqlalchemy.orm import sessionmaker
 from models import UserData, LicenseCosts
 from states import Form
 from keyboards import (
-    get_keyboard, get_start_keyboard,
-    get_contact_keyboard, get_license_type_keyboard, get_confirmation_keyboard,
+    get_start_keyboard, get_contact_keyboard,
+    get_license_type_keyboard, get_confirmation_keyboard,
     get_retry_keyboard
 )
 from calculations import (
@@ -23,7 +23,6 @@ from decouple import Config, RepositoryEnv
 from graph import generate_cost_graph
 import os
 import aiohttp
-import json
 import re
 from datetime import datetime
 import logging
@@ -94,6 +93,31 @@ async def cmd_start(message: Message):
     await message.answer(
         text=user_text, reply_markup=get_start_keyboard(),
         parse_mode=ParseMode.HTML)
+
+
+async def send_new_user_notification(user_id: int, username: str):
+    """
+    Отправляет уведомление о новом пользователе в указанный чат.
+
+    :param user_id: ID пользователя в Telegram
+    :param username: Имя пользователя в Telegram
+    """
+    notification_text = (
+        "🚀 <b>Новый пользователь!</b>\n"
+        f"<b>ID:</b> {user_id}\n"
+        f"<b>Имя пользователя:</b> @{username}\n"
+        f"<b>Время:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+
+    try:
+        await bot.send_message(
+            chat_id=CHAT_ID,
+            text=notification_text,
+            parse_mode=ParseMode.HTML
+        )
+        logging.info(f"Уведомление о новом пользователе отправлено: {user_id}")
+    except Exception as e:
+        logging.error(f"Ошибка при отправке уведомления: {e}")
 
 
 async def start_form(callback_query: CallbackQuery, state: FSMContext):
