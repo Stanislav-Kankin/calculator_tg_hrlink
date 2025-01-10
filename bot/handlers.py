@@ -155,65 +155,7 @@ async def process_employee_count(message: Message, state: FSMContext):
     employee_count = int(message.text)
     await state.update_data(employee_count=employee_count)
 
-    if 0 < employee_count <= 499:
-        await message.answer(
-            "Какой вариант КЭДО вам больше подходит:\n"
-            "\n"
-            "<b><u>HRlink Lite</u> - для простых кадровых процессов:</b>\n"
-            "- интеграции с «1С:ЗУП» и «1С:Фреш»;\n"
-            "- уведомления через Telegram или почту;\n"
-            "- облачное размещение;\n"
-            "- сопровождение через службу заботы.\n"
-            "\n"
-            "<b><u>HRlink Standard</u> - для кадровых процессов </b>"
-            "<b>с нетиповыми маршрутами</b> "
-            "<b>и большим количеством интеграций:</b>\n"
-            "- интеграции с «1С», «Битрикс24», «БОСС-Кадровик», SAP;\n"
-            "- уведомления через Telegram, почту и СМС;\n"
-            "- возможность доработок после внедрения;\n"
-            "- размещение на сервере;\n"
-            "- персональное сопровождение.\n"
-            "\n"
-            "<b>Используйте кнопки внизу сообщения.</b>",
-            reply_markup=get_license_type_keyboard(),
-            parse_mode=ParseMode.HTML)
-        await state.set_state(Form.license_type)
-    elif 500 <= employee_count <= 1999:
-        await state.update_data(
-            license_type="standard", employee_license_cost=700)
-        await message.answer(
-            "<b>Сколько кадровых специалистов в вашей компании?</b>",
-            parse_mode=ParseMode.HTML)
-        await state.set_state(Form.hr_specialist_count)
-    elif employee_count >= 2000:
-        await state.update_data(
-            license_type="enterprise", employee_license_cost=600)
-        await message.answer(
-            "<b>Сколько кадровых специалистов в вашей компании?</b>",
-            parse_mode=ParseMode.HTML)
-        await state.set_state(Form.hr_specialist_count)
-    else:
-        await message.answer(
-            "Пожалуйста, введите корректное количество сотрудников.",
-            parse_mode=ParseMode.HTML)
-
-
-async def process_license_type(
-        callback_query: CallbackQuery, state: FSMContext):
-    license_type = "lite" if callback_query.data == "simple_kedo" else "standard"
-    await state.update_data(license_type=license_type)
-
-    if license_type == "lite":
-        employee_license_cost = 500
-        tariff_name = "HRlink Lite"
-    else:
-        employee_license_cost = 700
-        tariff_name = "HRlink Standard"
-
-    await state.update_data(employee_license_cost=employee_license_cost)
-    await state.update_data(tariff_name=tariff_name)
-
-    await callback_query.message.answer(
+    await message.answer(
         "<b>Сколько кадровых специалистов в вашей компании?</b>",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.hr_specialist_count)
@@ -337,7 +279,7 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
     else:
         # Если доставка равна 0, пропускаем вопрос о проценте
         await state.update_data(hr_delivery_percentage=0)
-        await save_data(message, state, bot)  # Сохраняем данные
+        await ask_license_type(message, state)  # Переходим к выбору лицензии
 
 
 async def process_hr_delivery_percentage(message: Message, state: FSMContext):
@@ -349,10 +291,51 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
             parse_mode=ParseMode.HTML)
         return
     await state.update_data(hr_delivery_percentage=value)
-    await state.update_data(user_id=message.from_user.id)
+    await ask_license_type(message, state)  # Переходим к выбору лицензии
 
-    # Вызываем save_data только после ввода всех данных
-    await save_data(message, state, bot)
+
+async def ask_license_type(message: Message, state: FSMContext):
+    await message.answer(
+        "Какой вариант КЭДО вам больше подходит:\n"
+        "\n"
+        "<b><u>HRlink Lite</u> - для простых кадровых процессов:</b>\n"
+        "- интеграции с «1С:ЗУП» и «1С:Фреш»;\n"
+        "- уведомления через Telegram или почту;\n"
+        "- облачное размещение;\n"
+        "- сопровождение через службу заботы.\n"
+        "\n"
+        "<b><u>HRlink Standard</u> - для кадровых процессов </b>"
+        "<b>с нетиповыми маршрутами</b> "
+        "<b>и большим количеством интеграций:</b>\n"
+        "- интеграции с «1С», «Битрикс24», «БОСС-Кадровик», SAP;\n"
+        "- уведомления через Telegram, почту и СМС;\n"
+        "- возможность доработок после внедрения;\n"
+        "- размещение на сервере;\n"
+        "- персональное сопровождение.\n"
+        "\n"
+        "<b>Используйте кнопки внизу сообщения.</b>",
+        reply_markup=get_license_type_keyboard(),
+        parse_mode=ParseMode.HTML)
+    await state.set_state(Form.license_type)
+
+
+async def process_license_type(
+        callback_query: CallbackQuery, state: FSMContext):
+    license_type = "lite" if callback_query.data == "simple_kedo" else "standard"
+    await state.update_data(license_type=license_type)
+
+    if license_type == "lite":
+        employee_license_cost = 500
+        tariff_name = "HRlink Lite"
+    else:
+        employee_license_cost = 700
+        tariff_name = "HRlink Standard"
+
+    await state.update_data(employee_license_cost=employee_license_cost)
+    await state.update_data(tariff_name=tariff_name)
+
+    # После выбора лицензии переходим к сохранению данных
+    await save_data(callback_query.message, state, bot)
 
 
 async def save_data(message: Message, state: FSMContext, bot: Bot):
@@ -643,9 +626,9 @@ async def confirm_data(message: Message, state: FSMContext):
             format_number(
                 total_paper_costs + total_logistics_costs +
                 total_operations_costs - total_license_costs)}</b> рублей в год \n"
-        f"<b>Стоимость HRlink для вашей компании от: {
+        f"<b>Стоимость HRlink для вашей компании: от {
             format_number(total_license_costs)}</b> рублей в год. \n"
-        "<u><i>Стоимость решения КЭДО от HRlink в месяц от: </i></u> "
+        "<u><i>Стоимость решения КЭДО от HRlink в месяц</i></u>: от "
         f"<b>{format_number(total_license_costs / 12)}</b> руб.\n"
         "\n"
         "Точная цена рассчитывается менеджером "
