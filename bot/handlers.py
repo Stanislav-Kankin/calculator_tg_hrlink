@@ -649,7 +649,7 @@ async def confirm_data(message: Message, state: FSMContext):
     employee_license_cost = data.get("employee_license_cost", 700)
     user_text2 += (
         f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
-        "<b>Цена лицензии сотрудника от:</b> "
+        "<b>Цена лицензии сотрудника:</b> <u>от</u> "
         f"<u>{employee_license_cost} рублей в год</u>"
     )
 
