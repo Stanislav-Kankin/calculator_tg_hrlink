@@ -628,13 +628,13 @@ async def confirm_data(message: Message, state: FSMContext):
             total_logistics_costs +
             total_operations_costs -
             total_license_costs
-            )}</b> рублей в год.\n"
-        f"<b>Стоимость HRlink для вашей компании: от {format_number(
+            )} рублей в год.</b>\n"
+        f"<b>Стоимость HRlink для вашей компании:</b> от {format_number(
             total_license_costs
-            )}</b> рублей в год.\n"
-        f"Цена лицензии сотрудника: от <b>{data.get(
+            )} рублей в год.\n"
+        f"<b>Цена лицензии сотрудника:</b> от {data.get(
             'employee_license_cost', 700
-            )}</b> рублей в год.\n"
+            )} рублей в год.\n"
         "\n"
         "Точная цена рассчитывается менеджером "
         "индивидуально для каждого клиента.\n"
