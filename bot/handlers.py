@@ -623,12 +623,12 @@ async def confirm_data(message: Message, state: FSMContext):
     )
 
     user_text2 = (
-        f"Внедрив КЭДО от HRlink, вы сможете сэкономить <b>{format_number(
+        f"Внедрив КЭДО от HRlink, вы <b>сможете сэкономить {format_number(
             total_paper_costs +
             total_logistics_costs +
             total_operations_costs -
             total_license_costs
-            )} рублей в год.</b>\n"
+            )}</b> рублей в год.\n"
         f"<b>Стоимость HRlink для вашей компании:</b> от {format_number(
             total_license_costs
             )} рублей в год.\n"
