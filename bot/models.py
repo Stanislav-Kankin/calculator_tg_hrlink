@@ -20,7 +20,8 @@ class UserData(Base):
     average_salary = Column(Float)
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
-    license_type = Column(String)  # Новое поле
+    license_type = Column(String)  # Тип лицензии
+    employee_license_cost = Column(Float)  # Добавьте это поле
     timestamp = Column(DateTime, default=datetime.now())
     total_paper_costs = Column(Float)
     total_logistics_costs = Column(Float)
