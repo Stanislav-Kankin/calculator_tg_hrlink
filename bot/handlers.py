@@ -644,14 +644,14 @@ async def confirm_data(message: Message, state: FSMContext):
         "— все виды электронных подписей."
     )
 
-    # Добавляем информацию о тарифе и цене лицензии
-    tariff_name = get_tariff_name(data)
-    employee_license_cost = data.get("employee_license_cost", 700)
-    user_text2 += (
-        f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
-        "<b>Цена лицензии сотрудника:</b> <u>от</u> "
-        f"<u>{employee_license_cost} рублей в год</u>"
-    )
+    # # Добавляем информацию о тарифе и цене лицензии
+    # tariff_name = get_tariff_name(data)
+    # employee_license_cost = data.get("employee_license_cost", 700)
+    # user_text2 += (
+    #     f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
+    #     "<b>Цена лицензии сотрудника:</b> <u>от</u> "
+    #     f"<u>{employee_license_cost} рублей в год</u>"
+    # )
 
     # Генерация и отправка графика
     graph_path = generate_cost_graph(
