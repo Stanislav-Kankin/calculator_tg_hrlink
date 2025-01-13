@@ -600,40 +600,24 @@ async def confirm_data(message: Message, state: FSMContext):
     license_costs = session.query(LicenseCosts).first()
     total_license_costs = calculate_total_license_costs(data, license_costs)
 
-    # Вывод результатов
+    # Формирование текста сообщения
     user_text1 = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
-        f"<b>Ваши расходы на бумажное КДП: {
-            format_number(
-                total_paper_costs + total_logistics_costs +
-                total_operations_costs
-                )
-                }</b> рублей в год\n"
+        f"<b>Ваши расходы на бумажное КДП: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> рублей в год\n"
         "\n"
-        f"Печать и хранение кадровых документов: <b>{
-            format_number(total_paper_costs)}</b> рублей в год\n"
-        f"Доставка кадровых документов: <b>{
-            format_number(total_logistics_costs)}</b> рублей в год\n"
-        "Оплата времени кадрового специалиста, "
-        f"которое он тратит на работу с документами: <b>{
-            format_number(total_operations_costs)}</b> рублей в год\n"
+        f"Печать и хранение кадровых документов: <b>{format_number(total_paper_costs)}</b> рублей в год\n"
+        f"Доставка кадровых документов: <b>{format_number(total_logistics_costs)}</b> рублей в год\n"
+        "Оплата времени кадрового специалиста, которое он тратит на работу с документами: <b>{format_number(total_operations_costs)}</b> рублей в год\n"
         "\n"
-        )
+    )
 
     user_text2 = (
-        f"Внедрив КЭДО от HRlink, вы сможете сэкономить <b>{
-            format_number(
-                total_paper_costs + total_logistics_costs +
-                total_operations_costs - total_license_costs)}</b> рублей в год \n"
-        f"<b>Стоимость HRlink для вашей компании: от {
-            format_number(total_license_costs)}</b> рублей в год. \n"
-        "<u><i>Стоимость решения КЭДО от HRlink в месяц</i></u>: от "
-        f"<b>{format_number(total_license_costs / 12)}</b> руб.\n"
+        f"Внедрив КЭДО от HRlink, вы сможете сэкономить <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> рублей в год.\n"
+        f"Стоимость HRlink для вашей компании: от <b>{format_number(total_license_costs)}</b> рублей в год.\n"
+        f"Цена лицензии сотрудника: от <b>{data.get('employee_license_cost', 700)}</b> рублей в год.\n"
         "\n"
-        "Точная цена рассчитывается менеджером "
-        "индивидуально для каждого клиента."
-        "\n"
+        "Точная цена рассчитывается менеджером индивидуально для каждого клиента.\n"
         "Вы получите:\n"
         "\n"
         "— множество интеграций с учетными системами и не только;\n"
@@ -641,17 +625,8 @@ async def confirm_data(message: Message, state: FSMContext):
         "— легитимное подписание и хранение документов;\n"
         "— удобный личный кабинет сотрудника;\n"
         "— гибкие маршруты и процессы;\n"
-        "— все виды электронных подписей."
+        "— все виды электронных подписей.\n"
     )
-
-    # # Добавляем информацию о тарифе и цене лицензии
-    # tariff_name = get_tariff_name(data)
-    # employee_license_cost = data.get("employee_license_cost", 700)
-    # user_text2 += (
-    #     f"\n\n<b>Рекомендуемый тариф:</b> {tariff_name}\n"
-    #     "<b>Цена лицензии сотрудника:</b> <u>от</u> "
-    #     f"<u>{employee_license_cost} рублей в год</u>"
-    # )
 
     # Генерация и отправка графика
     graph_path = generate_cost_graph(
