@@ -604,20 +604,40 @@ async def confirm_data(message: Message, state: FSMContext):
     user_text1 = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
-        f"<b>Ваши расходы на бумажное КДП: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> рублей в год\n"
+        f"<b>Ваши расходы на бумажное КДП: {format_number(
+            total_paper_costs +
+            total_logistics_costs +
+            total_operations_costs
+            )}</b> рублей в год\n"
         "\n"
-        f"Печать и хранение кадровых документов: <b>{format_number(total_paper_costs)}</b> рублей в год\n"
-        f"Доставка кадровых документов: <b>{format_number(total_logistics_costs)}</b> рублей в год\n"
-        "Оплата времени кадрового специалиста, которое он тратит на работу с документами: <b>{format_number(total_operations_costs)}</b> рублей в год\n"
+        f"Печать и хранение кадровых документов: <b>{format_number(
+            total_paper_costs
+            )}</b> рублей в год\n"
+        f"Доставка кадровых документов: <b>{format_number(
+            total_logistics_costs
+            )}</b> рублей в год\n"
+        "Оплата времени кадрового специалиста, которое он тратит на "
+        "работу с документами: <b>{format_number(total_operations_costs)}</b> "
+        "рублей в год\n"
         "\n"
     )
 
     user_text2 = (
-        f"Внедрив КЭДО от HRlink, вы сможете сэкономить <b>{format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> рублей в год.\n"
-        f"Стоимость HRlink для вашей компании: от <b>{format_number(total_license_costs)}</b> рублей в год.\n"
-        f"Цена лицензии сотрудника: от <b>{data.get('employee_license_cost', 700)}</b> рублей в год.\n"
+        f"Внедрив КЭДО от HRlink, вы сможете сэкономить <b>{format_number(
+            total_paper_costs +
+            total_logistics_costs +
+            total_operations_costs -
+            total_license_costs
+            )}</b> рублей в год.\n"
+        f"<b>Стоимость HRlink для вашей компании: от {format_number(
+            total_license_costs
+            )}</b> рублей в год.\n"
+        f"Цена лицензии сотрудника: от <b>{data.get(
+            'employee_license_cost', 700
+            )}</b> рублей в год.\n"
         "\n"
-        "Точная цена рассчитывается менеджером индивидуально для каждого клиента.\n"
+        "Точная цена рассчитывается менеджером "
+        "индивидуально для каждого клиента.\n"
         "Вы получите:\n"
         "\n"
         "— множество интеграций с учетными системами и не только;\n"
