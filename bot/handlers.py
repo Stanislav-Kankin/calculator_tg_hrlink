@@ -617,7 +617,7 @@ async def confirm_data(message: Message, state: FSMContext):
             total_logistics_costs
             )}</b> рублей в год\n"
         "Оплата времени кадрового специалиста, которое он тратит на "
-        "работу с документами: <b>{format_number(total_operations_costs)}</b> "
+        f"работу с документами: <b>{format_number(total_operations_costs)}</b> "
         "рублей в год\n"
         "\n"
     )
