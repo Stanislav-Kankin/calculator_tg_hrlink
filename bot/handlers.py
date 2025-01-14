@@ -359,34 +359,41 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     session = Session()
 
-    # Проверка на количество записей для одного user_id
-    user_data_entries = session.query(UserData).filter_by(
-        user_id=message.from_user.id).all()
-    if len(user_data_entries) >= 5:
-        # Удаление самой старой записи
-        oldest_entry = session.query(UserData).filter_by(
-            user_id=message.from_user.id).order_by(
-                UserData.timestamp.asc()).first()
-        session.delete(oldest_entry)
+    # Проверяем, существует ли запись для данного user_id
+    user_data = session.query(UserData).filter_by(user_id=message.from_user.id).first()
 
-    # Устанавливаем значение по умолчанию для organization_name
-    organization_name = data.get('organization_name', 'Не указано')
+    if user_data:
+        # Если запись существует, обновляем её
+        user_data.organization_name = data.get('organization_name', 'Не указано')
+        user_data.employee_count = data.get('employee_count', None)
+        user_data.hr_specialist_count = data.get('hr_specialist_count', None)
+        user_data.license_type = data.get('license_type', 'standard')
+        user_data.documents_per_employee = data.get('documents_per_employee', None)
+        user_data.pages_per_document = data.get('pages_per_document', None)
+        user_data.turnover_percentage = data.get('turnover_percentage', None)
+        user_data.average_salary = data.get('average_salary', None)
+        user_data.courier_delivery_cost = data.get('courier_delivery_cost', None)
+        user_data.hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
+        user_data.timestamp = datetime.now()  # Обновляем время
+    else:
+        # Если записи нет, создаем новую
+        user_data = UserData(
+            user_id=message.from_user.id,
+            organization_name=data.get('organization_name', 'Не указано'),
+            employee_count=data.get('employee_count', None),
+            hr_specialist_count=data.get('hr_specialist_count', None),
+            license_type=data.get('license_type', 'standard'),
+            documents_per_employee=data.get('documents_per_employee', None),
+            pages_per_document=data.get('pages_per_document', None),
+            turnover_percentage=data.get('turnover_percentage', None),
+            average_salary=data.get('average_salary', None),
+            courier_delivery_cost=data.get('courier_delivery_cost', None),
+            hr_delivery_percentage=data.get('hr_delivery_percentage', 0),
+            timestamp=datetime.now()  # Устанавливаем текущее время
+        )
+        session.add(user_data)
 
-    user_data = UserData(
-        user_id=message.from_user.id,
-        organization_name=organization_name,
-        employee_count=data.get('employee_count', None),
-        hr_specialist_count=data.get('hr_specialist_count', None),
-        license_type=data.get('license_type', 'standard'),
-        documents_per_employee=data.get('documents_per_employee', None),
-        pages_per_document=data.get('pages_per_document', None),
-        turnover_percentage=data.get('turnover_percentage', None),
-        average_salary=data.get('average_salary', None),
-        courier_delivery_cost=data.get('courier_delivery_cost', None),
-        hr_delivery_percentage=data.get('hr_delivery_percentage', 0)
-    )
-
-    session.add(user_data)
+    # Сохраняем изменения в базе данных
     session.commit()
 
     # Проверяем, все ли данные введены
@@ -395,18 +402,15 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
         documents_per_year = calculate_documents_per_year(data)
         pages_per_year = calculate_pages_per_year(data)
         total_paper_costs = calculate_total_paper_costs(pages_per_year)
-        total_logistics_costs = calculate_total_logistics_costs(
-            data, documents_per_year)
+        total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
         cost_per_minute = calculate_cost_per_minute(data)
-        total_operations_costs = calculate_total_operations_costs(
-            data, documents_per_year, cost_per_minute)
+        total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
 
         # Расчет суммы по использованию нашего решения
         license_costs = session.query(LicenseCosts).first()
-        total_license_costs = calculate_total_license_costs(
-            data, license_costs)
+        total_license_costs = calculate_total_license_costs(data, license_costs)
 
-        # Сохранение результатов расчетов в базе данных
+        # Обновляем результаты расчетов в базе данных
         user_data.total_paper_costs = total_paper_costs
         user_data.total_logistics_costs = total_logistics_costs
         user_data.total_operations_costs = total_operations_costs
@@ -423,18 +427,13 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
         # Вывод результатов
         results = (
             f"<b>Число сотрудников:</b> {data.get('employee_count', 'Не указано')}\n"
-            f"<b>Число кадровых специалистов:</b> {
-                data.get('hr_specialist_count', 'Не указано')
-                }\n"
-            f"<b>Документов в год на сотрудника:</b> {
-                data.get('documents_per_employee', 'Не указано')}\n"
+            f"<b>Число кадровых специалистов:</b> {data.get('hr_specialist_count', 'Не указано')}\n"
+            f"<b>Документов в год на сотрудника:</b> {data.get('documents_per_employee', 'Не указано')}\n"
             f"<b>Страниц в документе:</b> {data.get('pages_per_document', 'Не указано')}\n"
             f"<b>Текучка в процентах:</b> {data.get('turnover_percentage', 'Не указано')}%\n"
             f"<b>Средняя зарплата:</b> {data.get('average_salary', 'Не указано')} руб.\n"
-            f"<b>Стоимость курьерской доставки:</b> {
-                data.get('courier_delivery_cost', 'Не указано')} руб.\n"
-            f"<b>Процент отправки кадровых документов:</b> {
-                data.get('hr_delivery_percentage', 'Не указано')}%\n"
+            f"<b>Стоимость курьерской доставки:</b> {data.get('courier_delivery_cost', 'Не указано')} руб.\n"
+            f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 'Не указано')}%\n"
             "<b>Подходящий тариф:</b> "
             f"<u>{get_tariff_name(data)}</u>\n"
         )
@@ -442,11 +441,6 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
             f"<b>Вы ввели следующие данные:</b>\n{results}",
             reply_markup=get_confirmation_keyboard(),
             parse_mode=ParseMode.HTML)
-
-        # Передаем данные в функцию создания лида
-    else:
-        # Если данные ещё не полные, просто сохраняем их
-        session.commit()
 
     session.close()
 
