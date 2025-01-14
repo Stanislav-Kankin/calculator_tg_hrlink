@@ -72,9 +72,7 @@ def register_handlers(dp: Dispatcher):
 async def cmd_start(message: Message):
     user_id = message.from_user.id
     username = message.from_user.username or "Имя пользователя не задано"
-    # Логирование user_id
-    # print(f"Пользователь нажал /start. user_id: {user_id}, username: {username}")
-
+    print(f"Пользователь нажал /start. user_id: {user_id}, username: {username}")
     session = Session()
     user_exists = session.query(UserData).filter_by(user_id=user_id).first()
     session.close()
@@ -157,7 +155,65 @@ async def process_employee_count(message: Message, state: FSMContext):
     employee_count = int(message.text)
     await state.update_data(employee_count=employee_count)
 
-    await message.answer(
+    if 0 < employee_count <= 499:
+        await message.answer(
+            "Какой вариант КЭДО вам больше подходит:\n"
+            "\n"
+            "<b><u>HRlink Lite</u> - для простых кадровых процессов:</b>\n"
+            "- интеграции с «1С:ЗУП» и «1С:Фреш»;\n"
+            "- уведомления через Telegram или почту;\n"
+            "- облачное размещение;\n"
+            "- сопровождение через службу заботы.\n"
+            "\n"
+            "<b><u>HRlink Standard</u> - для кадровых процессов </b>"
+            "<b>с нетиповыми маршрутами</b> "
+            "<b>и большим количеством интеграций:</b>\n"
+            "- интеграции с «1С», «Битрикс24», «БОСС-Кадровик», SAP;\n"
+            "- уведомления через Telegram, почту и СМС;\n"
+            "- возможность доработок после внедрения;\n"
+            "- размещение на сервере;\n"
+            "- персональное сопровождение.\n"
+            "\n"
+            "<b>Используйте кнопки внизу сообщения.</b>",
+            reply_markup=get_license_type_keyboard(),
+            parse_mode=ParseMode.HTML)
+        await state.set_state(Form.license_type)
+    elif 500 <= employee_count <= 1999:
+        await state.update_data(
+            license_type="standard", employee_license_cost=700)
+        await message.answer(
+            "<b>Сколько кадровых специалистов в вашей компании?</b>",
+            parse_mode=ParseMode.HTML)
+        await state.set_state(Form.hr_specialist_count)
+    elif employee_count >= 2000:
+        await state.update_data(
+            license_type="enterprise", employee_license_cost=600)
+        await message.answer(
+            "<b>Сколько кадровых специалистов в вашей компании?</b>",
+            parse_mode=ParseMode.HTML)
+        await state.set_state(Form.hr_specialist_count)
+    else:
+        await message.answer(
+            "Пожалуйста, введите корректное количество сотрудников.",
+            parse_mode=ParseMode.HTML)
+
+
+async def process_license_type(
+        callback_query: CallbackQuery, state: FSMContext):
+    license_type = "lite" if callback_query.data == "simple_kedo" else "standard"
+    await state.update_data(license_type=license_type)
+
+    if license_type == "lite":
+        employee_license_cost = 500
+        tariff_name = "HRlink Lite"
+    else:
+        employee_license_cost = 700
+        tariff_name = "HRlink Standard"
+
+    await state.update_data(employee_license_cost=employee_license_cost)
+    await state.update_data(tariff_name=tariff_name)
+
+    await callback_query.message.answer(
         "<b>Сколько кадровых специалистов в вашей компании?</b>",
         parse_mode=ParseMode.HTML)
     await state.set_state(Form.hr_specialist_count)
@@ -281,7 +337,7 @@ async def process_courier_delivery_cost(message: Message, state: FSMContext):
     else:
         # Если доставка равна 0, пропускаем вопрос о проценте
         await state.update_data(hr_delivery_percentage=0)
-        await ask_license_type_or_save(message, state)  # Переходим к выбору лицензии или сохранению
+        await save_data(message, state, bot)  # Сохраняем данные
 
 
 async def process_hr_delivery_percentage(message: Message, state: FSMContext):
@@ -293,109 +349,35 @@ async def process_hr_delivery_percentage(message: Message, state: FSMContext):
             parse_mode=ParseMode.HTML)
         return
     await state.update_data(hr_delivery_percentage=value)
-    await ask_license_type_or_save(message, state)  # Переходим к выбору лицензии или сохранению
+    await state.update_data(user_id=message.from_user.id)
 
-
-async def ask_license_type_or_save(message: Message, state: FSMContext):
-    """
-    Проверяет количество сотрудников и либо предлагает выбрать лицензию,
-    либо сразу сохраняет данные.
-    """
-    data = await state.get_data()
-    employee_count = data.get('employee_count', 0)
-
-    if 0 < employee_count < 500:
-        await ask_license_type(message, state)
-    else:
-        # Если сотрудников 500 и больше, автоматически устанавливаем тип лицензии
-        if 500 <= employee_count <= 1999:
-            await state.update_data(
-                license_type="standard", employee_license_cost=700)
-        elif employee_count >= 2000:
-            await state.update_data(
-                license_type="enterprise", employee_license_cost=600)
-
-        # Переходим к сохранению данных
-        await save_data(message, state, bot)
-
-
-async def ask_license_type(message: Message, state: FSMContext):
-    await message.answer(
-        "Какой вариант КЭДО вам больше подходит:\n"
-        "\n"
-        "<b><u>HRlink Lite</u> - для простых кадровых процессов:</b>\n"
-        "- интеграции с «1С:ЗУП» и «1С:Фреш»;\n"
-        "- уведомления через Telegram или почту;\n"
-        "- облачное размещение;\n"
-        "- сопровождение через службу заботы.\n"
-        "\n"
-        "<b><u>HRlink Standard</u> - для кадровых процессов </b>"
-        "<b>с нетиповыми маршрутами</b> "
-        "<b>и большим количеством интеграций:</b>\n"
-        "- интеграции с «1С», «Битрикс24», «БОСС-Кадровик», SAP;\n"
-        "- уведомления через Telegram, почту и СМС;\n"
-        "- возможность доработок после внедрения;\n"
-        "- размещение на сервере;\n"
-        "- персональное сопровождение.\n"
-        "\n"
-        "<b>Используйте кнопки внизу сообщения.</b>",
-        reply_markup=get_license_type_keyboard(),
-        parse_mode=ParseMode.HTML)
-    await state.set_state(Form.license_type)
-
-
-async def process_license_type(
-        callback_query: CallbackQuery, state: FSMContext):
-    license_type = "lite" if callback_query.data == "simple_kedo" else "standard"
-    await state.update_data(license_type=license_type)
-
-    if license_type == "lite":
-        employee_license_cost = 500
-        tariff_name = "HRlink Lite"
-    else:
-        employee_license_cost = 700
-        tariff_name = "HRlink Standard"
-
-    await state.update_data(employee_license_cost=employee_license_cost)
-    await state.update_data(tariff_name=tariff_name)
-
-    # После выбора лицензии переходим к сохранению данных
-    await save_data(callback_query.message, state, bot)
+    # Вызываем save_data только после ввода всех данных
+    await save_data(message, state, bot)
 
 
 async def save_data(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     session = Session()
 
-    # Логирование user_id
-    # print(f"Текущий user_id из FSMContext: {data.get('user_id')}")
-    # print(f"Текущий user_id из message: {message.from_user.id}")
-    # print(f"Данные из FSMContext: {data}")
-
-    # Проверяем, что user_id есть в data
-    if 'user_id' not in data:
-        await message.answer("Ошибка: user_id не найден в данных.")
-        session.close()
-        return
-
     # Проверка на количество записей для одного user_id
-    user_data_entries = session.query(UserData).filter_by(user_id=data['user_id']).all()
+    user_data_entries = session.query(UserData).filter_by(
+        user_id=message.from_user.id).all()
     if len(user_data_entries) >= 5:
         # Удаление самой старой записи
-        oldest_entry = session.query(UserData).filter_by(user_id=data['user_id']).order_by(UserData.timestamp.asc()).first()
+        oldest_entry = session.query(UserData).filter_by(
+            user_id=message.from_user.id).order_by(
+                UserData.timestamp.asc()).first()
         session.delete(oldest_entry)
 
     # Устанавливаем значение по умолчанию для organization_name
     organization_name = data.get('organization_name', 'Не указано')
 
-    # Создаем новую запись
     user_data = UserData(
-        user_id=data['user_id'],  # Используем user_id из FSMContext
+        user_id=message.from_user.id,
         organization_name=organization_name,
         employee_count=data.get('employee_count', None),
         hr_specialist_count=data.get('hr_specialist_count', None),
         license_type=data.get('license_type', 'standard'),
-        employee_license_cost=data.get('employee_license_cost', 700),  # Добавляем стоимость лицензии
         documents_per_employee=data.get('documents_per_employee', None),
         pages_per_document=data.get('pages_per_document', None),
         turnover_percentage=data.get('turnover_percentage', None),
@@ -413,13 +395,16 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
         documents_per_year = calculate_documents_per_year(data)
         pages_per_year = calculate_pages_per_year(data)
         total_paper_costs = calculate_total_paper_costs(pages_per_year)
-        total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
+        total_logistics_costs = calculate_total_logistics_costs(
+            data, documents_per_year)
         cost_per_minute = calculate_cost_per_minute(data)
-        total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
+        total_operations_costs = calculate_total_operations_costs(
+            data, documents_per_year, cost_per_minute)
 
         # Расчет суммы по использованию нашего решения
         license_costs = session.query(LicenseCosts).first()
-        total_license_costs = calculate_total_license_costs(data, license_costs)
+        total_license_costs = calculate_total_license_costs(
+            data, license_costs)
 
         # Сохранение результатов расчетов в базе данных
         user_data.total_paper_costs = total_paper_costs
@@ -438,13 +423,18 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
         # Вывод результатов
         results = (
             f"<b>Число сотрудников:</b> {data.get('employee_count', 'Не указано')}\n"
-            f"<b>Число кадровых специалистов:</b> {data.get('hr_specialist_count', 'Не указано')}\n"
-            f"<b>Документов в год на сотрудника:</b> {data.get('documents_per_employee', 'Не указано')}\n"
+            f"<b>Число кадровых специалистов:</b> {
+                data.get('hr_specialist_count', 'Не указано')
+                }\n"
+            f"<b>Документов в год на сотрудника:</b> {
+                data.get('documents_per_employee', 'Не указано')}\n"
             f"<b>Страниц в документе:</b> {data.get('pages_per_document', 'Не указано')}\n"
             f"<b>Текучка в процентах:</b> {data.get('turnover_percentage', 'Не указано')}%\n"
             f"<b>Средняя зарплата:</b> {data.get('average_salary', 'Не указано')} руб.\n"
-            f"<b>Стоимость курьерской доставки:</b> {data.get('courier_delivery_cost', 'Не указано')} руб.\n"
-            f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 'Не указано')}%\n"
+            f"<b>Стоимость курьерской доставки:</b> {
+                data.get('courier_delivery_cost', 'Не указано')} руб.\n"
+            f"<b>Процент отправки кадровых документов:</b> {
+                data.get('hr_delivery_percentage', 'Не указано')}%\n"
             "<b>Подходящий тариф:</b> "
             f"<u>{get_tariff_name(data)}</u>\n"
         )
@@ -453,6 +443,7 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
             reply_markup=get_confirmation_keyboard(),
             parse_mode=ParseMode.HTML)
 
+        # Передаем данные в функцию создания лида
     else:
         # Если данные ещё не полные, просто сохраняем их
         session.commit()
@@ -516,7 +507,7 @@ async def process_organization_name(message: Message, state: FSMContext):
 
 async def send_contact_data(state: FSMContext):
     data = await state.get_data()
-    # print(f"Извлеченные данные из FSMContext: {data}")  # Логирование
+    print(f"Извлеченные данные из FSMContext: {data}")  # Логирование
 
     if 'user_id' not in data:
         raise KeyError("user_id is missing in state data")
@@ -637,7 +628,7 @@ async def confirm_data(message: Message, state: FSMContext):
     )
 
     user_text2 = (
-        f"Внедрив КЭДО от HRlink, вы <b>сможете сэкономить {format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> рублей в год.\n"
+        f"Внедрив КЭДО от HRlink, вы <b>сможете сэкономить: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs - total_license_costs)}</b> рублей в год.\n"
         f"<b>Стоимость HRlink для вашей компании:</b> от {format_number(total_license_costs)} рублей в год.\n"
         f"<b>Цена лицензии сотрудника:</b> от {data.get('employee_license_cost', 700)} рублей в год.\n"
         "\n"
@@ -753,7 +744,7 @@ async def create_bitrix_lead(data):
 
     # Логирование данных
     # print("Отправляемые данные в Битрикс24:")
-    # print(lead_data)
+    # print(json.dumps(lead_data, indent=2, ensure_ascii=False))
 
     try:
         async with aiohttp.ClientSession() as session:
