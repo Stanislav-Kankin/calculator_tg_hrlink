@@ -180,14 +180,14 @@ async def process_employee_count(message: Message, state: FSMContext):
         await state.set_state(Form.license_type)
     elif 500 <= employee_count <= 1999:
         await state.update_data(
-            license_type="standard", employee_license_cost=700)
+            license_type="standard", employee_license_cost=700, tariff_name="HRlink Standard")
         await message.answer(
             "<b>Сколько кадровых специалистов в вашей компании?</b>",
             parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_specialist_count)
     elif employee_count >= 2000:
         await state.update_data(
-            license_type="enterprise", employee_license_cost=600)
+            license_type="enterprise", employee_license_cost=600, tariff_name="HRlink Enterprise")
         await message.answer(
             "<b>Сколько кадровых специалистов в вашей компании?</b>",
             parse_mode=ParseMode.HTML)
@@ -783,4 +783,4 @@ def get_tariff_name(data):
     elif license_type == 'enterprise':
         return "HRlink Enterprise"
     else:
-        return "HRlink Standard"  # По умолчанию
+        return "HRlink Standard"  # По умолчаниюы
