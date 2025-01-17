@@ -199,9 +199,10 @@ async def process_employee_count(message: Message, state: FSMContext):
 
 
 async def process_license_type(
-        callback_query: CallbackQuery, state: FSMContext):
+        callback_query: CallbackQuery, state: FSMContext
+        ):
     license_type = "lite" if callback_query.data == "simple_kedo" else "standard"
-    await state.update_data(license_type=license_type)
+    await state.update_data(license_type=license_type)  # Обновляем license_type в state
 
     if license_type == "lite":
         employee_license_cost = 500
@@ -211,7 +212,7 @@ async def process_license_type(
         tariff_name = "HRlink Standard"
 
     await state.update_data(employee_license_cost=employee_license_cost)
-    await state.update_data(tariff_name=tariff_name)
+    await state.update_data(tariff_name=tariff_name)  # Обновляем tariff_name в state
 
     await callback_query.message.answer(
         "<b>Сколько кадровых специалистов в вашей компании?</b>",
@@ -368,6 +369,7 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
         user_data.employee_count = data.get('employee_count', None)
         user_data.hr_specialist_count = data.get('hr_specialist_count', None)
         user_data.license_type = data.get('license_type', 'standard')
+        user_data.tariff_name = data.get('tariff_name', 'HRlink Standard')  # Сохраняем tariff_name
         user_data.documents_per_employee = data.get('documents_per_employee', None)
         user_data.pages_per_document = data.get('pages_per_document', None)
         user_data.turnover_percentage = data.get('turnover_percentage', None)
@@ -383,6 +385,7 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
             employee_count=data.get('employee_count', None),
             hr_specialist_count=data.get('hr_specialist_count', None),
             license_type=data.get('license_type', 'standard'),
+            tariff_name=data.get('tariff_name', 'HRlink Standard'),  # Сохраняем tariff_name
             documents_per_employee=data.get('documents_per_employee', None),
             pages_per_document=data.get('pages_per_document', None),
             turnover_percentage=data.get('turnover_percentage', None),
@@ -501,87 +504,62 @@ async def process_organization_name(message: Message, state: FSMContext):
 
 async def send_contact_data(state: FSMContext):
     data = await state.get_data()
-    print(f"Извлеченные данные из FSMContext: {data}")  # Логирование
-
-    if 'user_id' not in data:
-        raise KeyError("user_id is missing in state data")
-
-    # Проверяем, все ли данные заполнены
-    required_fields = [
-        'contact_name', 'contact_phone', 'contact_email', 'organization_name'
-    ]
-    missing_fields = [field for field in required_fields if field not in data]
-
-    if missing_fields:
-        # Если какие-то поля отсутствуют, уведомляем пользователя
-        missing_fields_text = ", ".join(missing_fields)
-        await bot.send_message(
-            chat_id=data['user_id'],
-            text=f"<b>Не заполнены следующие поля:</b> "
-                 f"{missing_fields_text}.\n"
-                 "Пожалуйста, заполните все поля, чтобы "
-                 "оставить заявку на обратный звонок.",
-            parse_mode=ParseMode.HTML
-        )
-        return
-
-    # Получение данных из базы данных
     session = Session()
+
+    # Получаем последнюю запись из БД
     user_data_entries = session.query(UserData).filter_by(
         user_id=data['user_id']).order_by(UserData.timestamp.desc()).all()
     session.close()
 
-    # Формирование сообщения с данными из базы данных
-    if user_data_entries:
-        latest_entry = user_data_entries[0]  # Берем последнюю запись
-        user_data_info = (
-            f"<b>Тип лицензии:</b> <u>{get_tariff_name(data)}</u>\n"
-            f"<b>Число сотрудников:</b> {latest_entry.employee_count}\n"
-            f"<b>Число кадровых специалистов:</b> {
-                latest_entry.hr_specialist_count}\n"
-            f"<b>Документов в год на сотрудника:</b> {
-                latest_entry.documents_per_employee}\n"
-            f"<b>Страниц в документе:</b> {latest_entry.pages_per_document}\n"
-            f"<b>Текучка в процентах:</b> {
-                latest_entry.turnover_percentage}%\n"
-            f"<b>Средняя зарплата:</b> {latest_entry.average_salary} руб.\n"
-            f"<b>Стоимость курьерской доставки:</b> {
-                latest_entry.courier_delivery_cost} руб.\n"
-            f"<b>Процент отправки кадровых документов:</b> {
-                latest_entry.hr_delivery_percentage}%\n"
-            f"<b>Сумма текущих трат на КДП на бумаге:</b> {
-                format_number(
-                    latest_entry.total_paper_costs + latest_entry.total_logistics_costs +
-                    latest_entry.total_operations_costs
-                    ) if latest_entry.total_paper_costs is not None and latest_entry.total_logistics_costs is not None and latest_entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
-            f"<b>Сумма КЭДО от HRlink:</b> {
-                format_number(
-                    latest_entry.total_license_costs
-                    ) if latest_entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
-            f"<b>Время расчета:</b> {latest_entry.timestamp}\n"
+    if not user_data_entries:
+        await bot.send_message(
+            chat_id=data['user_id'],
+            text="<b>Ошибка: данные не найдены в базе данных.</b>",
+            parse_mode=ParseMode.HTML
         )
-    else:
-        user_data_info = "<b>Данные о расчетах отсутствуют.</b>"
+        return
 
-    # Формирование первого сообщения с контактной информацией
+    latest_entry = user_data_entries[0]  # Берем последнюю запись
+
+    # Формируем комментарии с данными из БД
+    comments = (
+        f"<b>Тип лицензии:</b> <u>{latest_entry.tariff_name}</u>\n"
+        f"<b>Число сотрудников:</b> {latest_entry.employee_count}\n"
+        f"<b>Число кадровых специалистов:</b> {latest_entry.hr_specialist_count}\n"
+        f"<b>Документов в год на сотрудника:</b> {latest_entry.documents_per_employee}\n"
+        f"<b>Страниц в документе:</b> {latest_entry.pages_per_document}\n"
+        f"<b>Текучка в процентах:</b> {latest_entry.turnover_percentage}%\n"
+        f"<b>Средняя зарплата:</b> {latest_entry.average_salary} руб.\n"
+        f"<b>Стоимость курьерской доставки:</b> {latest_entry.courier_delivery_cost} руб.\n"
+        f"<b>Процент отправки кадровых документов:</b> {latest_entry.hr_delivery_percentage}%\n"
+        f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(
+            latest_entry.total_paper_costs + latest_entry.total_logistics_costs +
+            latest_entry.total_operations_costs
+        ) if latest_entry.total_paper_costs is not None and latest_entry.total_logistics_costs is not None and latest_entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
+        f"<b>Сумма КЭДО от HRlink:</b> {format_number(latest_entry.total_license_costs) if latest_entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
+        f"<b>Время расчета:</b> {latest_entry.timestamp}\n"
+    )
+
+    # Формируем первое сообщение с контактной информацией
     contact_info = (
         "<b>КЛИЕНТ ОСТАВИЛ ЗАЯВКУ</b>\n"
         f"<b>Имя:</b> {data['contact_name']}\n"
         f"<b>Телефон:</b> <code>{data['contact_phone']}</code>\n"
         f"<b>Email:</b> <code>{data['contact_email']}</code>\n"
         f"<b>Название компании:</b> {data['organization_name']}\n"
-        f"<b>Тип лицензии:</b> <u>{get_tariff_name(data)}</u>\n"
+        f"<b>Тип лицензии:</b> <u>{latest_entry.tariff_name}</u>\n"
     )
 
-    await create_bitrix_lead(data)
-
-    # Отправка сообщений
+    # Отправляем сообщения
     await bot.send_message(
         chat_id=CHAT_ID, text=contact_info,
         parse_mode=ParseMode.HTML)
     await bot.send_message(
-        chat_id=CHAT_ID, text=user_data_info,
+        chat_id=CHAT_ID, text=comments,
         parse_mode=ParseMode.HTML)
+
+    # Создаем лид в Битрикс
+    await create_bitrix_lead(data, comments)
 
 
 async def process_callback(callback_query: CallbackQuery, state: FSMContext):
@@ -676,7 +654,7 @@ async def echo(message: Message):
         parse_mode=ParseMode.HTML)
 
 
-async def create_bitrix_lead(data):
+async def create_bitrix_lead(data, comments):
     bitrix_webhook_url = (
         "https://b24.hrlk.ru/rest/7414/d6bo0kujd1cm2owi/crm.lead.add.json"
     )
@@ -686,43 +664,6 @@ async def create_bitrix_lead(data):
     if not is_valid_email(email):
         email = ""  # Если email невалидный, передаем пустое значение
 
-    # Получение данных из базы данных
-    session = Session()
-    user_data_entries = session.query(UserData).filter_by(
-        user_id=data['user_id']).order_by(UserData.timestamp.desc()).all()
-    session.close()
-
-    # Формирование сообщения с данными из базы данных
-    if user_data_entries:
-        latest_entry = user_data_entries[0]  # Берем последнюю запись
-        comments = (
-            f"Название организации: {data.get(
-                'organization_name', 'Не указано')}\n"
-            f"Тариф: {get_tariff_name(data)}\n"
-            f"Число сотрудников: {latest_entry.employee_count}\n"
-            f"Число кадровых специалистов: {
-                latest_entry.hr_specialist_count}\n"
-            f"Документов в год на сотрудника: {
-                latest_entry.documents_per_employee}\n"
-            f"Страниц в документе: {latest_entry.pages_per_document}\n"
-            f"Текучка в процентах: {latest_entry.turnover_percentage}%\n"
-            f"Средняя зарплата: {latest_entry.average_salary} руб.\n"
-            f"Стоимость курьерской доставки: {
-                latest_entry.courier_delivery_cost} руб.\n"
-            f"Процент отправки кадровых документов: {
-                latest_entry.hr_delivery_percentage}%\n"
-            f"Сумма текущих трат на КДП на бумаге: {
-                format_number(
-                    latest_entry.total_paper_costs +
-                    latest_entry.total_logistics_costs +
-                    latest_entry.total_operations_costs
-                    ) if latest_entry.total_paper_costs is not None and latest_entry.total_logistics_costs is not None and latest_entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
-            f"Сумма КЭДО от HRlink: {format_number(latest_entry.total_license_costs) if latest_entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
-            f"Время расчета: {latest_entry.timestamp}\n"
-        )
-    else:
-        comments = "<b>Данные о расчетах отсутствуют.</b>"
-
     # Формирование данных для лида
     lead_data = {
         "fields": {
@@ -730,15 +671,11 @@ async def create_bitrix_lead(data):
             "NAME": data.get("contact_name", "Не указано"),
             "PHONE": [{"VALUE": data.get("contact_phone", "Не указано"), "VALUE_TYPE": "WORK"}],
             "EMAIL": [{"VALUE": email, "VALUE_TYPE": "WORK"}] if email else [],  # Передаем email, только если он валидный
-            "COMMENTS": comments,
+            "COMMENTS": comments,  # Используем комментарии, сформированные из БД
             "SOURCE_ID": "32",  # Телеграмм-бот / продукт
             "SOURCE_DESCRIPTION": "Телеграмм-бот / продукт"  # Дополнительно об источнике
         }
     }
-
-    # Логирование данных
-    # print("Отправляемые данные в Битрикс24:")
-    # print(json.dumps(lead_data, indent=2, ensure_ascii=False))
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -749,10 +686,8 @@ async def create_bitrix_lead(data):
                         print("Лид успешно создан в Битрикс24")
                     else:
                         print(
-                            f"Ошибка при создании лида: {
-                                response_data.get('error_description')
-                                }"
-                                )
+                            f"Ошибка при создании лида: {response_data.get('error_description')}"
+                        )
                 else:
                     print(f"Ошибка HTTP: {response.status}")
                     print(f"Ответ сервера: {await response.text()}")

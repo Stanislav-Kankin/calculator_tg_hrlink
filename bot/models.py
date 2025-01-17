@@ -20,6 +20,8 @@ class UserData(Base):
     average_salary = Column(Float)
     courier_delivery_cost = Column(Float)
     hr_delivery_percentage = Column(Float)
+    license_type = Column(String)  # Тип лицензии (lite, standard, enterprise)
+    tariff_name = Column(String)  # Название тарифа (HRlink Lite, HRlink Standard, HRlink Enterprise)
     license_type = Column(String)  # Тип лицензии
     employee_license_cost = Column(Float)  # Добавьте это поле
     timestamp = Column(DateTime, default=datetime.now())
