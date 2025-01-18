@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Указываем команду для запуска бота
-CMD ["python", "tg_bot/bot/bot.py"]
+CMD ["python", "bot/bot.py"]
