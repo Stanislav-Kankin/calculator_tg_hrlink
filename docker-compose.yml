@@ -3,9 +3,9 @@ version: '3.8'
 services:
   bot:
     build: .
-    environment:
-      BOT_TOKEN: ${BOT_TOKEN}
-      CHAT_ID: ${CHAT_ID}
+    container_name: hrl_calc-container
+    env_file:
+      - ./bot/.env  # Указываем путь к .env внутри папки bot
     volumes:
       - .:/app
     restart: always
