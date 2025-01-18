@@ -1,18 +1,17 @@
 # Используем официальный образ Python
-FROM python:3.10-slim
+FROM python:3.9-slim
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем файлы проекта в рабочую директорию
-COPY . /app
+# Копируем файл с зависимостями
+COPY requirements.txt .
 
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем переменные окружения
-ENV BOT_TOKEN=your_bot_token
-ENV CHAT_ID=your_chat_id
+# Копируем все файлы проекта
+COPY . .
 
-# Команда для запуска бота
-CMD ["python", "tg_bot/bot/main.py"]
+# Указываем команду для запуска бота
+CMD ["python", "tg_bot/bot/bot.py"]
