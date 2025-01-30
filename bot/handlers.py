@@ -1,6 +1,9 @@
 from aiogram import Dispatcher, Bot
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart
+from aiogram.types import (
+    Message, CallbackQuery,
+    InlineKeyboardMarkup, InlineKeyboardButton
+)
+from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.enums import ParseMode
 from aiogram.types.input_file import FSInputFile
@@ -24,7 +27,7 @@ from graph import generate_cost_graph
 import os
 import aiohttp
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 config = Config(RepositoryEnv('.env'))
@@ -38,6 +41,17 @@ Session = sessionmaker(bind=engine)
 
 def register_handlers(dp: Dispatcher):
     dp.message.register(cmd_start, CommandStart())
+    dp.message.register(cmd_users, Command("users"))
+
+    dp.callback_query.register(process_users_day, lambda c: c.data == "users_day")
+    dp.callback_query.register(process_users_week, lambda c: c.data == "users_week")
+    dp.callback_query.register(process_users_quarter, lambda c: c.data == "users_quarter")
+    dp.callback_query.register(process_users_year, lambda c: c.data == "users_year")
+
+    dp.message.register(process_day_input, StateFilter(Form.waiting_for_day))
+    dp.message.register(process_week_input, StateFilter(Form.waiting_for_week))
+    dp.message.register(process_quarter_input, StateFilter(Form.waiting_for_quarter))
+    dp.message.register(process_year_input, StateFilter(Form.waiting_for_year))
     dp.callback_query.register(start_form, lambda c: c.data == "start_form")
     dp.message.register(
         restart_form, lambda message: message.text.lower() == 'заново')
@@ -47,23 +61,23 @@ def register_handlers(dp: Dispatcher):
         process_license_type, lambda c: c.data in [
             "simple_kedo", "standard_kedo"
             ])
-    dp.message.register(process_hr_specialist_count, Form.hr_specialist_count)
-    dp.message.register(process_organization_name, Form.organization_name)
-    dp.message.register(process_employee_count, Form.employee_count)
+    dp.message.register(process_hr_specialist_count, StateFilter(Form.hr_specialist_count))
+    dp.message.register(process_organization_name, StateFilter(Form.organization_name))
+    dp.message.register(process_employee_count, StateFilter(Form.employee_count))
     dp.message.register(
-        process_documents_per_employee, Form.documents_per_employee)
-    dp.message.register(process_pages_per_document, Form.pages_per_document)
-    dp.message.register(process_turnover_percentage, Form.turnover_percentage)
-    dp.message.register(process_average_salary, Form.average_salary)
+        process_documents_per_employee, StateFilter(Form.documents_per_employee))
+    dp.message.register(process_pages_per_document, StateFilter(Form.pages_per_document))
+    dp.message.register(process_turnover_percentage, StateFilter(Form.turnover_percentage))
+    dp.message.register(process_average_salary, StateFilter(Form.average_salary))
     dp.message.register(
-        process_courier_delivery_cost, Form.courier_delivery_cost)
+        process_courier_delivery_cost, StateFilter(Form.courier_delivery_cost))
     dp.message.register(
-        process_hr_delivery_percentage, Form.hr_delivery_percentage)
+        process_hr_delivery_percentage, StateFilter(Form.hr_delivery_percentage))
     dp.callback_query.register(contact_me, lambda c: c.data == "contact_me")
-    dp.message.register(process_contact_name, Form.contact_name)
-    dp.message.register(process_contact_phone, Form.contact_phone)
-    dp.message.register(process_contact_email, Form.contact_email)
-    dp.message.register(process_contact_preference, Form.contact_preference)
+    dp.message.register(process_contact_name, StateFilter(Form.contact_name))
+    dp.message.register(process_contact_phone, StateFilter(Form.contact_phone))
+    dp.message.register(process_contact_email, StateFilter(Form.contact_email))
+    dp.message.register(process_contact_preference, StateFilter(Form.contact_preference))
     dp.message.register(echo)
     dp.callback_query.register(
         process_callback, lambda c: c.data in ["restart", "stop", "confirm"])
@@ -92,6 +106,118 @@ async def cmd_start(message: Message):
     await message.answer(
         text=user_text, reply_markup=get_start_keyboard(),
         parse_mode=ParseMode.HTML)
+
+
+async def cmd_users(message: Message):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="День", callback_data="users_day")],
+        [InlineKeyboardButton(text="Неделя", callback_data="users_week")],
+        [InlineKeyboardButton(text="Квартал", callback_data="users_quarter")],
+        [InlineKeyboardButton(text="Год", callback_data="users_year")]
+    ])
+
+    await message.answer(
+        "Выберите период для отображения статистики:",
+        reply_markup=keyboard
+    )
+
+
+async def process_users_day(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Введите дату в формате ДД.ММ.ГГГГ:")
+    await state.set_state(Form.waiting_for_day)
+
+
+async def process_day_input(message: Message, state: FSMContext):
+    try:
+        date = datetime.strptime(message.text, "%d.%m.%Y")
+        await state.update_data(selected_date=date)
+
+        session = Session()
+        users_count = session.query(UserData).filter(
+            UserData.timestamp >= date,
+            UserData.timestamp < date + timedelta(days=1)
+        ).distinct(UserData.user_id).count()
+        session.close()
+
+        await message.answer(f"Количество уникальных пользователей за {date.strftime('%d.%m.%Y')}: {users_count}")
+        await state.clear()
+    except ValueError:
+        await message.answer("Некорректный формат даты. Введите дату в формате ДД.ММ.ГГГГ:")
+
+
+async def process_users_week(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Введите номер недели и год в формате НН.ГГГГ:")
+    await state.set_state(Form.waiting_for_week)
+
+
+async def process_week_input(message: Message, state: FSMContext):
+    try:
+        week, year = map(int, message.text.split('.'))
+        start_of_week = datetime.fromisocalendar(year, week, 1)
+        end_of_week = start_of_week + timedelta(weeks=1)
+
+        session = Session()
+        users_count = session.query(UserData).filter(
+            UserData.timestamp >= start_of_week,
+            UserData.timestamp < end_of_week
+        ).distinct(UserData.user_id).count()
+        session.close()
+
+        await message.answer(f"Количество уникальных пользователей за {week} неделю {year} года: {users_count}")
+        await state.clear()
+    except (ValueError, IndexError):
+        await message.answer("Некорректный формат. Введите номер недели и год в формате НН.ГГГГ:")
+
+
+async def process_users_quarter(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Введите номер квартала и год в формате К.ГГГГ (например, 1.2023):")
+    await state.set_state(Form.waiting_for_quarter)
+
+
+async def process_quarter_input(message: Message, state: FSMContext):
+    try:
+        quarter, year = map(int, message.text.split('.'))
+        if quarter < 1 or quarter > 4:
+            raise ValueError("Номер квартала должен быть от 1 до 4.")
+
+        start_of_quarter = datetime(year, 3 * (quarter - 1) + 1, 1)
+        end_of_quarter = datetime(year, 3 * quarter + 1, 1) if quarter < 4 else datetime(year + 1, 1, 1)
+
+        session = Session()
+        users_count = session.query(UserData).filter(
+            UserData.timestamp >= start_of_quarter,
+            UserData.timestamp < end_of_quarter
+        ).distinct(UserData.user_id).count()
+        session.close()
+
+        await message.answer(f"Количество уникальных пользователей за {quarter} квартал {year} года: {users_count}")
+        await state.clear()
+    except (ValueError, IndexError):
+        await message.answer("Некорректный формат. Введите номер квартала и год в формате К.ГГГГ (например, 1.2023):")
+
+
+async def process_users_year(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Введите год в формате ГГГГ:")
+    await state.set_state(Form.waiting_for_year)
+
+
+async def process_year_input(message: Message, state: FSMContext):
+    try:
+        year = int(message.text)
+        start_of_year = datetime(year, 1, 1)
+        end_of_year = datetime(year + 1, 1, 1)
+
+        session = Session()
+        users_count = session.query(UserData).filter(
+            UserData.timestamp >= start_of_year,
+            UserData.timestamp < end_of_year
+        ).distinct(UserData.user_id).count()
+        session.close()
+
+        await message.answer(f"Количество уникальных пользователей за {year} год: {users_count}")
+        await state.clear()
+    except ValueError:
+        await message.answer("Некорректный формат. Введите год в формате ГГГГ:")
 
 
 async def send_new_user_notification(user_id: int, username: str):
