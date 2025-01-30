@@ -43,15 +43,27 @@ def register_handlers(dp: Dispatcher):
     dp.message.register(cmd_start, CommandStart())
     dp.message.register(cmd_users, Command("users"))
 
-    dp.callback_query.register(process_users_day, lambda c: c.data == "users_day")
-    dp.callback_query.register(process_users_week, lambda c: c.data == "users_week")
-    dp.callback_query.register(process_users_quarter, lambda c: c.data == "users_quarter")
-    dp.callback_query.register(process_users_year, lambda c: c.data == "users_year")
+    dp.callback_query.register(
+        process_users_day, lambda c: c.data == "users_day"
+        )
+    dp.callback_query.register(
+        process_users_week, lambda c: c.data == "users_week"
+        )
+    dp.callback_query.register(
+        process_users_quarter, lambda c: c.data == "users_quarter"
+        )
+    dp.callback_query.register(
+        process_users_year, lambda c: c.data == "users_year"
+        )
 
-    dp.message.register(process_day_input, StateFilter(Form.waiting_for_day))
-    dp.message.register(process_week_input, StateFilter(Form.waiting_for_week))
-    dp.message.register(process_quarter_input, StateFilter(Form.waiting_for_quarter))
-    dp.message.register(process_year_input, StateFilter(Form.waiting_for_year))
+    dp.message.register(process_day_input, StateFilter(
+        Form.waiting_for_day))
+    dp.message.register(process_week_input, StateFilter(
+        Form.waiting_for_week))
+    dp.message.register(process_quarter_input, StateFilter(
+        Form.waiting_for_quarter))
+    dp.message.register(process_year_input, StateFilter(
+        Form.waiting_for_year))
     dp.callback_query.register(start_form, lambda c: c.data == "start_form")
     dp.message.register(
         restart_form, lambda message: message.text.lower() == 'заново')
@@ -61,23 +73,33 @@ def register_handlers(dp: Dispatcher):
         process_license_type, lambda c: c.data in [
             "simple_kedo", "standard_kedo"
             ])
-    dp.message.register(process_hr_specialist_count, StateFilter(Form.hr_specialist_count))
-    dp.message.register(process_organization_name, StateFilter(Form.organization_name))
-    dp.message.register(process_employee_count, StateFilter(Form.employee_count))
     dp.message.register(
-        process_documents_per_employee, StateFilter(Form.documents_per_employee))
-    dp.message.register(process_pages_per_document, StateFilter(Form.pages_per_document))
-    dp.message.register(process_turnover_percentage, StateFilter(Form.turnover_percentage))
-    dp.message.register(process_average_salary, StateFilter(Form.average_salary))
+        process_hr_specialist_count, StateFilter(Form.hr_specialist_count))
     dp.message.register(
-        process_courier_delivery_cost, StateFilter(Form.courier_delivery_cost))
+        process_organization_name, StateFilter(Form.organization_name))
+    dp.message.register(process_employee_count, StateFilter(
+        Form.employee_count))
     dp.message.register(
-        process_hr_delivery_percentage, StateFilter(Form.hr_delivery_percentage))
+        process_documents_per_employee, StateFilter(
+            Form.documents_per_employee))
+    dp.message.register(process_pages_per_document, StateFilter(
+        Form.pages_per_document))
+    dp.message.register(process_turnover_percentage, StateFilter(
+        Form.turnover_percentage))
+    dp.message.register(process_average_salary, StateFilter(
+        Form.average_salary))
+    dp.message.register(
+        process_courier_delivery_cost, StateFilter(
+            Form.courier_delivery_cost))
+    dp.message.register(
+        process_hr_delivery_percentage, StateFilter(
+            Form.hr_delivery_percentage))
     dp.callback_query.register(contact_me, lambda c: c.data == "contact_me")
     dp.message.register(process_contact_name, StateFilter(Form.contact_name))
     dp.message.register(process_contact_phone, StateFilter(Form.contact_phone))
     dp.message.register(process_contact_email, StateFilter(Form.contact_email))
-    dp.message.register(process_contact_preference, StateFilter(Form.contact_preference))
+    dp.message.register(process_contact_preference, StateFilter(
+        Form.contact_preference))
     dp.message.register(echo)
     dp.callback_query.register(
         process_callback, lambda c: c.data in ["restart", "stop", "confirm"])
@@ -86,7 +108,9 @@ def register_handlers(dp: Dispatcher):
 async def cmd_start(message: Message):
     user_id = message.from_user.id
     username = message.from_user.username or "Имя пользователя не задано"
-    print(f"Пользователь нажал /start. user_id: {user_id}, username: {username}")
+    print(
+        f"Пользователь нажал /start. user_id: {user_id}, username: {username}"
+        )
     session = Session()
     user_exists = session.query(UserData).filter_by(user_id=user_id).first()
     session.close()
@@ -139,14 +163,22 @@ async def process_day_input(message: Message, state: FSMContext):
         ).distinct(UserData.user_id).count()
         session.close()
 
-        await message.answer(f"Количество уникальных пользователей за {date.strftime('%d.%m.%Y')}: {users_count}")
+        await message.answer(
+            f"Количество уникальных пользователей за {
+                date.strftime('%d.%m.%Y')
+                }: {users_count}"
+            )
         await state.clear()
     except ValueError:
-        await message.answer("Некорректный формат даты. Введите дату в формате ДД.ММ.ГГГГ:")
+        await message.answer(
+            "Некорректный формат даты. Введите дату в формате ДД.ММ.ГГГГ:"
+            )
 
 
 async def process_users_week(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.message.answer("Введите номер недели и год в формате НН.ГГГГ:")
+    await callback_query.message.answer(
+        "Введите номер недели и год в формате НН.ГГГГ:"
+        )
     await state.set_state(Form.waiting_for_week)
 
 
@@ -163,14 +195,24 @@ async def process_week_input(message: Message, state: FSMContext):
         ).distinct(UserData.user_id).count()
         session.close()
 
-        await message.answer(f"Количество уникальных пользователей за {week} неделю {year} года: {users_count}")
+        await message.answer(
+            f"Количество уникальных пользователей за {week} "
+            f"неделю {year} года: {users_count}"
+            )
         await state.clear()
     except (ValueError, IndexError):
-        await message.answer("Некорректный формат. Введите номер недели и год в формате НН.ГГГГ:")
+        await message.answer(
+            "Некорректный формат. Введите номер "
+            "недели и год в формате НН.ГГГГ:"
+            )
 
 
-async def process_users_quarter(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.message.answer("Введите номер квартала и год в формате К.ГГГГ (например, 1.2023):")
+async def process_users_quarter(
+        callback_query: CallbackQuery,
+        state: FSMContext):
+    await callback_query.message.answer(
+        "Введите номер квартала и год в формате К.ГГГГ (например, 1.2023):"
+        )
     await state.set_state(Form.waiting_for_quarter)
 
 
@@ -181,7 +223,9 @@ async def process_quarter_input(message: Message, state: FSMContext):
             raise ValueError("Номер квартала должен быть от 1 до 4.")
 
         start_of_quarter = datetime(year, 3 * (quarter - 1) + 1, 1)
-        end_of_quarter = datetime(year, 3 * quarter + 1, 1) if quarter < 4 else datetime(year + 1, 1, 1)
+        end_of_quarter = datetime(
+            year, 3 * quarter + 1, 1
+            ) if quarter < 4 else datetime(year + 1, 1, 1)
 
         session = Session()
         users_count = session.query(UserData).filter(
@@ -190,10 +234,16 @@ async def process_quarter_input(message: Message, state: FSMContext):
         ).distinct(UserData.user_id).count()
         session.close()
 
-        await message.answer(f"Количество уникальных пользователей за {quarter} квартал {year} года: {users_count}")
+        await message.answer(
+            f"Количество уникальных пользователей за {quarter} "
+            f"квартал {year} года: {users_count}"
+            )
         await state.clear()
     except (ValueError, IndexError):
-        await message.answer("Некорректный формат. Введите номер квартала и год в формате К.ГГГГ (например, 1.2023):")
+        await message.answer(
+            "Некорректный формат. Введите номер квартала и "
+            "год в формате К.ГГГГ (например, 1.2023):"
+            )
 
 
 async def process_users_year(callback_query: CallbackQuery, state: FSMContext):
@@ -214,10 +264,14 @@ async def process_year_input(message: Message, state: FSMContext):
         ).distinct(UserData.user_id).count()
         session.close()
 
-        await message.answer(f"Количество уникальных пользователей за {year} год: {users_count}")
+        await message.answer(
+            f"Количество уникальных пользователей за {year} год: {users_count}"
+            )
         await state.clear()
     except ValueError:
-        await message.answer("Некорректный формат. Введите год в формате ГГГГ:")
+        await message.answer(
+            "Некорректный формат. Введите год в формате ГГГГ:"
+            )
 
 
 async def send_new_user_notification(user_id: int, username: str):
@@ -305,14 +359,18 @@ async def process_employee_count(message: Message, state: FSMContext):
         await state.set_state(Form.license_type)
     elif 500 <= employee_count <= 1999:
         await state.update_data(
-            license_type="standard", employee_license_cost=700, tariff_name="HRlink Standard")
+            license_type="standard",
+            employee_license_cost=700,
+            tariff_name="HRlink Standard")
         await message.answer(
             "<b>Сколько кадровых специалистов в вашей компании?</b>",
             parse_mode=ParseMode.HTML)
         await state.set_state(Form.hr_specialist_count)
     elif employee_count >= 2000:
         await state.update_data(
-            license_type="enterprise", employee_license_cost=600, tariff_name="HRlink Enterprise")
+            license_type="enterprise",
+            employee_license_cost=600,
+            tariff_name="HRlink Enterprise")
         await message.answer(
             "<b>Сколько кадровых специалистов в вашей компании?</b>",
             parse_mode=ParseMode.HTML)
@@ -327,7 +385,7 @@ async def process_license_type(
         callback_query: CallbackQuery, state: FSMContext
         ):
     license_type = "lite" if callback_query.data == "simple_kedo" else "standard"
-    await state.update_data(license_type=license_type)  # Обновляем license_type в state
+    await state.update_data(license_type=license_type)
 
     if license_type == "lite":
         employee_license_cost = 500
@@ -337,7 +395,7 @@ async def process_license_type(
         tariff_name = "HRlink Standard"
 
     await state.update_data(employee_license_cost=employee_license_cost)
-    await state.update_data(tariff_name=tariff_name)  # Обновляем tariff_name в state
+    await state.update_data(tariff_name=tariff_name)
 
     await callback_query.message.answer(
         "<b>Сколько кадровых специалистов в вашей компании?</b>",
@@ -486,21 +544,27 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
     session = Session()
 
     # Проверяем, существует ли запись для данного user_id
-    user_data = session.query(UserData).filter_by(user_id=message.from_user.id).first()
+    user_data = session.query(UserData).filter_by(
+        user_id=message.from_user.id).first()
 
     if user_data:
         # Если запись существует, обновляем её
-        user_data.organization_name = data.get('organization_name', 'Не указано')
-        user_data.employee_count = data.get('employee_count', None)
+        user_data.organization_name = data.get(
+            'organization_name', 'Не указано')
+        user_data.employee_count = data.get(
+            'employee_count', None)
         user_data.hr_specialist_count = data.get('hr_specialist_count', None)
         user_data.license_type = data.get('license_type', 'standard')
-        user_data.tariff_name = data.get('tariff_name', 'HRlink Standard')  # Сохраняем tariff_name
-        user_data.documents_per_employee = data.get('documents_per_employee', None)
+        user_data.tariff_name = data.get('tariff_name', 'HRlink Standard')
+        user_data.documents_per_employee = data.get(
+            'documents_per_employee', None)
         user_data.pages_per_document = data.get('pages_per_document', None)
         user_data.turnover_percentage = data.get('turnover_percentage', None)
         user_data.average_salary = data.get('average_salary', None)
-        user_data.courier_delivery_cost = data.get('courier_delivery_cost', None)
-        user_data.hr_delivery_percentage = data.get('hr_delivery_percentage', 0)
+        user_data.courier_delivery_cost = data.get(
+            'courier_delivery_cost', None)
+        user_data.hr_delivery_percentage = data.get(
+            'hr_delivery_percentage', 0)
         user_data.timestamp = datetime.now()  # Обновляем время
     else:
         # Если записи нет, создаем новую
@@ -510,7 +574,7 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
             employee_count=data.get('employee_count', None),
             hr_specialist_count=data.get('hr_specialist_count', None),
             license_type=data.get('license_type', 'standard'),
-            tariff_name=data.get('tariff_name', 'HRlink Standard'),  # Сохраняем tariff_name
+            tariff_name=data.get('tariff_name', 'HRlink Standard'),
             documents_per_employee=data.get('documents_per_employee', None),
             pages_per_document=data.get('pages_per_document', None),
             turnover_percentage=data.get('turnover_percentage', None),
@@ -530,13 +594,16 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
         documents_per_year = calculate_documents_per_year(data)
         pages_per_year = calculate_pages_per_year(data)
         total_paper_costs = calculate_total_paper_costs(pages_per_year)
-        total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
+        total_logistics_costs = calculate_total_logistics_costs(
+            data, documents_per_year)
         cost_per_minute = calculate_cost_per_minute(data)
-        total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
+        total_operations_costs = calculate_total_operations_costs(
+            data, documents_per_year, cost_per_minute)
 
         # Расчет суммы по использованию нашего решения
         license_costs = session.query(LicenseCosts).first()
-        total_license_costs = calculate_total_license_costs(data, license_costs)
+        total_license_costs = calculate_total_license_costs(
+            data, license_costs)
 
         # Обновляем результаты расчетов в базе данных
         user_data.total_paper_costs = total_paper_costs
@@ -554,14 +621,22 @@ async def save_data(message: Message, state: FSMContext, bot: Bot):
 
         # Вывод результатов
         results = (
-            f"<b>Число сотрудников:</b> {data.get('employee_count', 'Не указано')}\n"
-            f"<b>Число кадровых специалистов:</b> {data.get('hr_specialist_count', 'Не указано')}\n"
-            f"<b>Документов в год на сотрудника:</b> {data.get('documents_per_employee', 'Не указано')}\n"
-            f"<b>Страниц в документе:</b> {data.get('pages_per_document', 'Не указано')}\n"
-            f"<b>Текучка в процентах:</b> {data.get('turnover_percentage', 'Не указано')}%\n"
-            f"<b>Средняя зарплата:</b> {data.get('average_salary', 'Не указано')} руб.\n"
-            f"<b>Стоимость курьерской доставки:</b> {data.get('courier_delivery_cost', 'Не указано')} руб.\n"
-            f"<b>Процент отправки кадровых документов:</b> {data.get('hr_delivery_percentage', 'Не указано')}%\n"
+            f"<b>Число сотрудников:</b> {data.get(
+                'employee_count', 'Не указано')}\n"
+            f"<b>Число кадровых специалистов:</b> {data.get(
+                'hr_specialist_count', 'Не указано')}\n"
+            f"<b>Документов в год на сотрудника:</b> {data.get(
+                'documents_per_employee', 'Не указано')}\n"
+            f"<b>Страниц в документе:</b> {data.get(
+                'pages_per_document', 'Не указано')}\n"
+            f"<b>Текучка в процентах:</b> {data.get(
+                'turnover_percentage', 'Не указано')}%\n"
+            f"<b>Средняя зарплата:</b> {data.get(
+                'average_salary', 'Не указано')} руб.\n"
+            f"<b>Стоимость курьерской доставки:</b> {data.get(
+                'courier_delivery_cost', 'Не указано')} руб.\n"
+            f"<b>Процент отправки кадровых документов:</b> {data.get(
+                'hr_delivery_percentage', 'Не указано')}%\n"
             "<b>Подходящий тариф:</b> "
             f"<u>{get_tariff_name(data)}</u>\n"
         )
@@ -650,15 +725,20 @@ async def send_contact_data(state: FSMContext):
     comments = (
         f"<b>Тип лицензии:</b> <u>{latest_entry.tariff_name}</u>\n"
         f"<b>Число сотрудников:</b> {latest_entry.employee_count}\n"
-        f"<b>Число кадровых специалистов:</b> {latest_entry.hr_specialist_count}\n"
-        f"<b>Документов в год на сотрудника:</b> {latest_entry.documents_per_employee}\n"
+        f"<b>Число кадровых специалистов:</b> {
+            latest_entry.hr_specialist_count}\n"
+        f"<b>Документов в год на сотрудника:</b> {
+            latest_entry.documents_per_employee}\n"
         f"<b>Страниц в документе:</b> {latest_entry.pages_per_document}\n"
         f"<b>Текучка в процентах:</b> {latest_entry.turnover_percentage}%\n"
         f"<b>Средняя зарплата:</b> {latest_entry.average_salary} руб.\n"
-        f"<b>Стоимость курьерской доставки:</b> {latest_entry.courier_delivery_cost} руб.\n"
-        f"<b>Процент отправки кадровых документов:</b> {latest_entry.hr_delivery_percentage}%\n"
+        f"<b>Стоимость курьерской доставки:</b> {
+            latest_entry.courier_delivery_cost} руб.\n"
+        f"<b>Процент отправки кадровых документов:</b> {
+            latest_entry.hr_delivery_percentage}%\n"
         f"<b>Сумма текущих трат на КДП на бумаге:</b> {format_number(
-            latest_entry.total_paper_costs + latest_entry.total_logistics_costs +
+            latest_entry.total_paper_costs +
+            latest_entry.total_logistics_costs +
             latest_entry.total_operations_costs
         ) if latest_entry.total_paper_costs is not None and latest_entry.total_logistics_costs is not None and latest_entry.total_operations_costs is not None else 'Неизвестно'} руб.\n"
         f"<b>Сумма КЭДО от HRlink:</b> {format_number(latest_entry.total_license_costs) if latest_entry.total_license_costs is not None else 'Неизвестно'} руб.\n"
@@ -704,9 +784,11 @@ async def confirm_data(message: Message, state: FSMContext):
     documents_per_year = calculate_documents_per_year(data)
     pages_per_year = calculate_pages_per_year(data)
     total_paper_costs = calculate_total_paper_costs(pages_per_year)
-    total_logistics_costs = calculate_total_logistics_costs(data, documents_per_year)
+    total_logistics_costs = calculate_total_logistics_costs(
+        data, documents_per_year)
     cost_per_minute = calculate_cost_per_minute(data)
-    total_operations_costs = calculate_total_operations_costs(data, documents_per_year, cost_per_minute)
+    total_operations_costs = calculate_total_operations_costs(
+        data, documents_per_year, cost_per_minute)
 
     # Расчет суммы по использованию нашего решения
     license_costs = session.query(LicenseCosts).first()
@@ -716,11 +798,19 @@ async def confirm_data(message: Message, state: FSMContext):
     user_text1 = (
         "<b>ОСНОВНЫЕ ВЫВОДЫ ПО ВВЕДЕННЫМ ДАННЫМ</b>\n"
         "\n"
-        f"<b>Ваши расходы на бумажное КДП: {format_number(total_paper_costs + total_logistics_costs + total_operations_costs)}</b> рублей в год\n"
+        f"<b>Ваши расходы на бумажное КДП: {format_number(
+            total_paper_costs + total_logistics_costs + total_operations_costs
+            )}</b> рублей в год\n"
         "\n"
-        f"Печать и хранение кадровых документов: <b>{format_number(total_paper_costs)}</b> рублей в год\n"
-        f"Доставка кадровых документов: <b>{format_number(total_logistics_costs)}</b> рублей в год\n"
-        f"Оплата времени кадрового специалиста, которое он тратит на работу с документами: <b>{format_number(total_operations_costs)}</b> рублей в год\n"
+        f"Печать и хранение кадровых документов: <b>{format_number(
+            total_paper_costs
+            )}</b> рублей в год\n"
+        f"Доставка кадровых документов: <b>{format_number(
+            total_logistics_costs
+            )}</b> рублей в год\n"
+        "Оплата времени кадрового специалиста, которое "
+        f"он тратит на работу с документами: <b>{
+            format_number(total_operations_costs)}</b> рублей в год\n"
         "\n"
     )
 
