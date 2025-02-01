@@ -19,5 +19,6 @@ class Form(StatesGroup):
     contact_preference = State()
     waiting_for_day = State()  # Новое состояние
     waiting_for_week = State()  # Новое состояние
+    waiting_for_month = State()
     waiting_for_quarter = State()  # Новое состояние
     waiting_for_year = State()  # Новое состояние
