@@ -38,7 +38,6 @@ bot = Bot(token=BOT_TOKEN)
 engine = create_engine('sqlite:///user_data.db')
 Session = sessionmaker(bind=engine)
 
-
 def register_handlers(dp: Dispatcher):
     dp.message.register(cmd_start, CommandStart())
     dp.message.register(cmd_users, Command("users"))
@@ -48,6 +47,9 @@ def register_handlers(dp: Dispatcher):
         )
     dp.callback_query.register(
         process_users_week, lambda c: c.data == "users_week"
+        )
+    dp.callback_query.register(
+        process_users_month, lambda c: c.data == "users_month"
         )
     dp.callback_query.register(
         process_users_quarter, lambda c: c.data == "users_quarter"
@@ -60,6 +62,8 @@ def register_handlers(dp: Dispatcher):
         Form.waiting_for_day))
     dp.message.register(process_week_input, StateFilter(
         Form.waiting_for_week))
+    dp.message.register(process_month_input, StateFilter(
+        Form.waiting_for_month))
     dp.message.register(process_quarter_input, StateFilter(
         Form.waiting_for_quarter))
     dp.message.register(process_year_input, StateFilter(
@@ -136,6 +140,7 @@ async def cmd_users(message: Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="День", callback_data="users_day")],
         [InlineKeyboardButton(text="Неделя", callback_data="users_week")],
+        [InlineKeyboardButton(text="Месяц", callback_data="users_month")],
         [InlineKeyboardButton(text="Квартал", callback_data="users_quarter")],
         [InlineKeyboardButton(text="Год", callback_data="users_year")]
     ])
@@ -204,6 +209,38 @@ async def process_week_input(message: Message, state: FSMContext):
         await message.answer(
             "Некорректный формат. Введите номер "
             "недели и год в формате НН.ГГГГ:"
+            )
+
+
+async def process_users_month(callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Введите месяц и год в формате ММ.ГГГГ:")
+    await state.set_state(Form.waiting_for_month)
+
+
+async def process_month_input(message: Message, state: FSMContext):
+    try:
+        month, year = map(int, message.text.split('.'))
+        if month < 1 or month > 12:
+            raise ValueError("Номер месяца должен быть от 1 до 12.")
+
+        start_of_month = datetime(year, month, 1)
+        end_of_month = datetime(year, month + 1, 1) if month < 12 else datetime(year + 1, 1, 1)
+
+        session = Session()
+        users_count = session.query(UserData).filter(
+            UserData.timestamp >= start_of_month,
+            UserData.timestamp < end_of_month
+        ).distinct(UserData.user_id).count()
+        session.close()
+
+        await message.answer(
+            f"Количество уникальных пользователей за {month} "
+            f"месяц {year} года: {users_count}"
+            )
+        await state.clear()
+    except (ValueError, IndexError):
+        await message.answer(
+            "Некорректный формат. Введите месяц и год в формате ММ.ГГГГ:"
             )
 
 
