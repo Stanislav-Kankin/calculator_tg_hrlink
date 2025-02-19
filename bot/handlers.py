@@ -28,6 +28,7 @@ import os
 import aiohttp
 import re
 from datetime import datetime, timedelta
+from broadcast import send_broadcast
 import logging
 
 config = Config(RepositoryEnv('.env'))
@@ -38,9 +39,11 @@ bot = Bot(token=BOT_TOKEN)
 engine = create_engine('sqlite:///user_data.db')
 Session = sessionmaker(bind=engine)
 
+
 def register_handlers(dp: Dispatcher):
     dp.message.register(cmd_start, CommandStart())
     dp.message.register(cmd_users, Command("users"))
+    dp.message.register(cmd_broadcast, Command("broadcast"))
 
     dp.callback_query.register(
         process_users_day, lambda c: c.data == "users_day"
@@ -107,6 +110,11 @@ def register_handlers(dp: Dispatcher):
     dp.message.register(echo)
     dp.callback_query.register(
         process_callback, lambda c: c.data in ["restart", "stop", "confirm"])
+
+
+async def cmd_broadcast(message: Message):
+    await send_broadcast(bot)  # Передаем экземпляр bot напрямую
+    await message.answer("Рассылка запущена!")
 
 
 async def cmd_start(message: Message):
@@ -212,8 +220,10 @@ async def process_week_input(message: Message, state: FSMContext):
             )
 
 
-async def process_users_month(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.message.answer("Введите месяц и год в формате ММ.ГГГГ:")
+async def process_users_month(
+        callback_query: CallbackQuery, state: FSMContext):
+    await callback_query.message.answer(
+        "Введите месяц и год в формате ММ.ГГГГ:")
     await state.set_state(Form.waiting_for_month)
 
 
@@ -224,7 +234,8 @@ async def process_month_input(message: Message, state: FSMContext):
             raise ValueError("Номер месяца должен быть от 1 до 12.")
 
         start_of_month = datetime(year, month, 1)
-        end_of_month = datetime(year, month + 1, 1) if month < 12 else datetime(year + 1, 1, 1)
+        end_of_month = datetime(
+            year, month + 1, 1) if month < 12 else datetime(year + 1, 1, 1)
 
         session = Session()
         users_count = session.query(UserData).filter(
