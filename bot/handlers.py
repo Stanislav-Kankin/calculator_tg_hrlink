@@ -114,7 +114,6 @@ def register_handlers(dp: Dispatcher):
 
 async def cmd_broadcast(message: Message):
     await send_broadcast(bot)  # Передаем экземпляр bot напрямую
-    await message.answer("Рассылка запущена!")
 
 
 async def cmd_start(message: Message):
